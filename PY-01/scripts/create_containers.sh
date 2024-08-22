@@ -2,7 +2,7 @@
 
 IMAGES=("high-ram-image" "high-cpu-image" "low-ram-image" "low-cpu-image")
 
-NUMBER_CONTAINERS=1 # Cantidad de contenedores que serán creados.
+NUMBER_CONTAINERS=10 # Cantidad de contenedores que serán creados.
 
 for i in $(seq 1 $NUMBER_CONTAINERS); do
     # 'IMAGES' es el arreglo que contiene los nombres de las imágenes que serán utilizadas para crear los contenedores.
