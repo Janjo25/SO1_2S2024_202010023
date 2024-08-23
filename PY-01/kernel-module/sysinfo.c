@@ -1,9 +1,12 @@
 #include <linux/fs.h>
 #include <linux/init.h>
+#include <linux/jiffies.h>
 #include <linux/kernel.h>
+#include <linux/ktime.h>
 #include <linux/mm.h>
 #include <linux/module.h>
 #include <linux/proc_fs.h>
+#include <linux/sched.h>
 #include <linux/sched/signal.h>
 #include <linux/seq_file.h>
 #include <linux/slab.h>
@@ -104,10 +107,14 @@ static int sysinfo_show(struct seq_file *output_file, void *unused) {
 
     si_meminfo(&system);
 
+    unsigned long total_ram = system.totalram * 4 / 1024; // Está dado en KB.
+    unsigned long free_ram = system.freeram * 4 / 1024;   // Está dado en KB.
+    unsigned long used_ram = total_ram - free_ram;
+
     seq_printf(output_file, "{\n");
-    seq_printf(output_file, "  \"total_ram\": %lu,\n", system.totalram * 4 / 1024);
-    seq_printf(output_file, "  \"free_ram\": %lu,\n", system.freeram * 4 / 1024);
-    seq_printf(output_file, "  \"used_ram\": %lu,\n", (system.totalram - system.freeram) * 4 / 1024);
+    seq_printf(output_file, "  \"total_ram\": %lu,\n", total_ram);
+    seq_printf(output_file, "  \"free_ram\": %lu,\n", free_ram);
+    seq_printf(output_file, "  \"used_ram\": %lu,\n", used_ram);
     seq_printf(output_file, "  \"processes\": [\n");
 
     struct task_struct *task;
@@ -118,12 +125,32 @@ static int sysinfo_show(struct seq_file *output_file, void *unused) {
         if (task->flags & PF_KTHREAD) continue; // Esta línea se agrega para omitir algunos procesos innecesarios.
 
         if (is_container_process(task->pid)) {
+            /* Se calcula el uso de memoria de un proceso.
+             * Se utiliza 'get_mm_rss' para obtener la cantidad de memoria que está siendo utilizada por un proceso.
+             * Se utiliza 'task->mm' para obtener la estructura de memoria de un proceso. */
+            unsigned long rss = task->mm ? get_mm_rss(task->mm) * 4 : 0; // Está dado en KB.
+            unsigned long memory_usage = (rss * 1000) / total_ram;
+
+            if (memory_usage > 1000) memory_usage = 1000; // Se asegura de que el uso de memoria no sea mayor al 100%.
+
+            /* Se calcula el uso de CPU de un proceso.
+             * Se utiliza 'task->utime' para obtener el tiempo de CPU que ha pasado en modo de usuario.
+             * Se utiliza 'task->stime' para obtener el tiempo de CPU que ha pasado en modo de kernel.
+             * Se utiliza 'get_jiffies_64' para obtener el tiempo total que ha pasado desde que se inició el sistema. */
+            unsigned long total_cpu_time = task->utime + task->stime;
+            unsigned long total_time = jiffies_to_msecs(get_jiffies_64()); // El tiempo total está dado en milisegundos.
+            unsigned long cpu_usage = (total_cpu_time * 1000) / total_time;
+
+            if (cpu_usage > 1000) cpu_usage = 1000; // Se asegura de que el uso de CPU no sea mayor al 100%.
+
             seq_printf(output_file, "    {\n");
             seq_printf(output_file, "      \"pid\": %d,\n", task->pid);
             seq_printf(output_file, "      \"name\": \"%s\",\n", task->comm);
             seq_printf(output_file, "      \"cmd_line\": \"%s\",\n", task->comm);
             seq_printf(output_file, "      \"vsz\": %lu,\n", task->mm ? task->mm->total_vm * 4 : 0);
-            seq_printf(output_file, "      \"rss\": %lu\n", task->mm ? get_mm_rss(task->mm) * 4 : 0);
+            seq_printf(output_file, "      \"rss\": %lu,\n", rss);
+            seq_printf(output_file, "      \"memory_usage\": %lu.%lu,\n", memory_usage / 10, memory_usage % 10);
+            seq_printf(output_file, "      \"cpu_usage\": %lu.%lu\n", cpu_usage / 10, cpu_usage % 10);
             seq_printf(output_file, "    },\n");
         }
     }
