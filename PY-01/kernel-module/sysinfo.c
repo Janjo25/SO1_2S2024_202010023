@@ -120,6 +120,7 @@ static int sysinfo_show(struct seq_file *output_file, void *unused) {
     struct task_struct *task;
 
     load_container_pids();
+    int written_pid_count = 0;
 
     for_each_process(task) {
         if (task->flags & PF_KTHREAD) continue; // Esta línea se agrega para omitir algunos procesos innecesarios.
@@ -151,7 +152,13 @@ static int sysinfo_show(struct seq_file *output_file, void *unused) {
             seq_printf(output_file, "      \"rss\": %lu,\n", rss);
             seq_printf(output_file, "      \"memory_usage\": %lu.%lu,\n", memory_usage / 10, memory_usage % 10);
             seq_printf(output_file, "      \"cpu_usage\": %lu.%lu\n", cpu_usage / 10, cpu_usage % 10);
-            seq_printf(output_file, "    },\n");
+
+            if (written_pid_count != pid_count - 1) {
+                seq_printf(output_file, "    },\n");
+                written_pid_count++;
+            } else {
+                seq_printf(output_file, "    }\n");
+            }
         }
     }
 
