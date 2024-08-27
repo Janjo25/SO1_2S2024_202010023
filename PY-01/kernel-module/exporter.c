@@ -13,7 +13,7 @@ int main() {
         return 1;
     }
 
-    output_file = fopen("sysinfo.txt", "w"); // Se abre el archivo en modo de escritura.
+    output_file = fopen("../rust-service/sysinfo.json", "w"); // Se abre el archivo en modo de escritura.
 
     if (output_file == NULL) {
         perror("Ocurrió un error al intentar abrir 'sysinfo.json'");
