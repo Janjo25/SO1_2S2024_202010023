@@ -1,6 +1,9 @@
 use serde::Deserialize;
 use std::fs::File;
 use std::io::{self, Read};
+use std::process::Command;
+use std::thread::sleep;
+use std::time::Duration;
 
 #[derive(Clone, Debug, Deserialize)]
 struct Process {
@@ -19,6 +22,29 @@ struct SysInfo {
     free_ram: u64,
     used_ram: u64,
     processes: Vec<Process>,
+}
+
+fn execute_exporter() -> io::Result<()> {
+    let working_directory = "../kernel-module";
+    let exporter_path = "../kernel-module/exporter";
+    let output = Command::new(exporter_path).current_dir(working_directory).output()?;
+
+    if !output.status.success() {
+        return Err(io::Error::new(io::ErrorKind::Other, "El exportador no se ejecutó correctamente."));
+    }
+
+    if !output.stderr.is_empty() {
+        let error_message = String::from_utf8_lossy(&output.stderr);
+
+        return Err(io::Error::new(io::ErrorKind::Other, format!("Error en el exportador: {}", error_message)));
+    }
+
+    let output_message = String::from_utf8_lossy(&output.stdout);
+    println!("{}", output_message);
+
+    sleep(Duration::from_secs(5));
+
+    Ok(())
 }
 
 fn read_file(path: &str) -> io::Result<SysInfo> {
@@ -66,6 +92,8 @@ fn sort_and_select_processes(processes: &[Process]) -> (Vec<Process>, Vec<Proces
 }
 
 fn main() -> io::Result<()> {
+    execute_exporter()?;
+
     let path = "./sysinfo.json";
     let sysinfo = read_file(path)?;
 
