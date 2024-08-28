@@ -17,5 +17,6 @@ for i in $(seq 1 $NUMBER_CONTAINERS); do
     echo "Se ha creado el contenedor $i: $CONTAINER_NAME utilizando la imagen '$IMAGE'"
 
     CONTAINER_PID=$(docker inspect --format '{{.State.Pid}}' "$CONTAINER_ID")
-    echo "$CONTAINER_PID" >> ../kernel-module/containers_pid.txt
+
+    echo "$CONTAINER_NAME-$CONTAINER_PID" >> ../kernel-module/containers_pid.txt
 done

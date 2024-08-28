@@ -19,9 +19,12 @@ MODULE_VERSION("1.0");
 
 #define PROC_NAME "sysinfo_202010023"
 #define MAXIMUM_CONTAINERS 1200
+#define NAME_LENGTH 8
 
+char name_list[MAXIMUM_CONTAINERS][NAME_LENGTH + 1];
 pid_t pid_list[MAXIMUM_CONTAINERS]; // El tipo de dato 'pid_t' se utiliza para almacenar el ID de un proceso.
-int pid_count = 0;                  // Este contador se utiliza para llevar la cuenta de cuántos procesos se han leído.
+
+int pid_count = 0; // Este contador se utiliza para llevar la cuenta de cuántos procesos se han leído.
 
 /* Se crea la función 'load_container_pids' que se encargará de leer los ID de los procesos y almacenarlos en 'pid_list'. */
 void load_container_pids(void) {
@@ -75,11 +78,20 @@ void load_container_pids(void) {
 
     while ((current_line = strsep(&current_pos, "\n")) != NULL) {
         if (strlen(current_line) > 0) {
-            pid_t pid = simple_strtol(current_line, NULL, 10); // Convierte el contenido de la línea a un entero.
+            char *separator = strchr(current_line, '-'); // Se busca la posición del separador '-' en la línea.
+            *separator = '\0';                           // Se remplaza por un carácter nulo para dividir la línea en dos partes.
+
+            pid_t pid = simple_strtol(separator + 1, NULL, 10); // Convierte el contenido de la línea a un entero.
+
             printk(KERN_INFO "PIDs leído: %d\n", pid);
 
             if (pid_count < MAXIMUM_CONTAINERS && pid != 0) {
-                pid_list[pid_count++] = pid;
+                pid_list[pid_count] = pid;
+
+                strncpy(name_list[pid_count], current_line, NAME_LENGTH); // Se copia el nombre del contenedor.
+                name_list[pid_count][NAME_LENGTH + 1] = '\0';
+
+                pid_count++;
             }
         }
     }
@@ -145,8 +157,8 @@ static int sysinfo_show(struct seq_file *output_file, void *unused) {
             if (cpu_usage > 1000) cpu_usage = 1000; // Se asegura de que el uso de CPU no sea mayor al 100%.
 
             seq_printf(output_file, "    {\n");
-            seq_printf(output_file, "      \"pid\": %d,\n", task->pid);
-            seq_printf(output_file, "      \"name\": \"%s\",\n", task->comm);
+            seq_printf(output_file, "      \"pid\": %d,\n", pid_list[written_pid_count]);
+            seq_printf(output_file, "      \"name\": \"%s\",\n", name_list[written_pid_count]);
             seq_printf(output_file, "      \"cmd_line\": \"%s\",\n", task->comm);
             seq_printf(output_file, "      \"vsz\": %lu,\n", task->mm ? task->mm->total_vm * 4 : 0);
             seq_printf(output_file, "      \"rss\": %lu,\n", rss);
