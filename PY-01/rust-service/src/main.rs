@@ -1,10 +1,8 @@
 use serde::Deserialize;
 use std::collections::HashMap;
-use std::fs::File;
-use std::io::{self, Read};
+use std::fs::{File, OpenOptions};
+use std::io::{self, BufWriter, Read, Write};
 use std::process::Command;
-use std::thread::sleep;
-use std::time::Duration;
 
 #[derive(Clone, Debug, Deserialize)]
 struct Process {
@@ -42,8 +40,6 @@ fn execute_exporter() -> io::Result<()> {
 
     let output_message = String::from_utf8_lossy(&output.stdout);
     println!("{}", output_message);
-
-    sleep(Duration::from_secs(5));
 
     Ok(())
 }
@@ -107,6 +103,24 @@ fn kill_container(name: &str) -> io::Result<()> {
     Ok(())
 }
 
+fn overwrite_file(high: HashMap<String, u64>, low: HashMap<String, u64>) -> io::Result<()> {
+    let path = "../kernel-module/containers_pid.txt";
+    let file = OpenOptions::new().write(true).truncate(true).open(path)?;
+    let mut writer = BufWriter::new(file);
+
+    for (name, pid) in high.iter() {
+        writeln!(writer, "{}-{}", name, pid)?;
+    }
+
+    for (name, pid) in low.iter() {
+        writeln!(writer, "{}-{}", name, pid)?;
+    }
+
+    writer.flush()?;
+
+    Ok(())
+}
+
 fn main() -> io::Result<()> {
     execute_exporter()?;
 
@@ -127,11 +141,13 @@ fn main() -> io::Result<()> {
 
     for process in sysinfo.processes {
         if !high.contains_key(&process.name) && !low.contains_key(&process.name) {
-            println!("Eliminando contenedor con PID: {} y nombre: {}", process.pid, process.name);
+            println!("Eliminando contenedor con PID: '{}' y nombre: '{}'", process.pid, process.name);
 
             kill_container(&process.name)?;
         }
     }
+
+    overwrite_file(high, low)?;
 
     Ok(())
 }
