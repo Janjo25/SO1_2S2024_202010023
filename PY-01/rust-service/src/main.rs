@@ -3,6 +3,9 @@ use std::collections::HashMap;
 use std::fs::{File, OpenOptions};
 use std::io::{self, BufWriter, Read, Write};
 use std::process::Command;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
+use std::time::Duration;
 
 #[derive(Clone, Debug, Deserialize)]
 struct Process {
@@ -122,32 +125,45 @@ fn overwrite_file(high: HashMap<String, u64>, low: HashMap<String, u64>) -> io::
 }
 
 fn main() -> io::Result<()> {
-    execute_exporter()?;
+    let running = Arc::new(AtomicBool::new(true));
+    let running_clone = Arc::clone(&running);
 
-    let path = "./sysinfo.json";
-    let sysinfo = read_file(path)?;
+    ctrlc::set_handler(move || {
+        running_clone.store(false, Ordering::SeqCst);
+    }).expect("Ocurrió un error al configurar el controlador 'Ctrl+C'.");
 
-    let (high, low) = sort_and_select_processes(&sysinfo.processes);
+    while running.load(Ordering::SeqCst) {
+        execute_exporter()?;
 
-    // println!("Procesos de alto consumo:");
-    // for process in &high {
-    //     println!("{:?}", process);
-    // }
+        let path = "./sysinfo.json";
+        let sysinfo = read_file(path)?;
 
-    // println!("Procesos de bajo consumo:");
-    // for process in &low {
-    //     println!("{:?}", process);
-    // }
+        let (high, low) = sort_and_select_processes(&sysinfo.processes);
 
-    for process in sysinfo.processes {
-        if !high.contains_key(&process.name) && !low.contains_key(&process.name) {
-            println!("Eliminando contenedor con PID: '{}' y nombre: '{}'", process.pid, process.name);
+        // println!("Procesos de alto consumo:");
+        // for process in &high {
+        //     println!("{:?}", process);
+        // }
 
-            kill_container(&process.name)?;
+        // println!("Procesos de bajo consumo:");
+        // for process in &low {
+        //     println!("{:?}", process);
+        // }
+
+        for process in sysinfo.processes {
+            if !high.contains_key(&process.name) && !low.contains_key(&process.name) {
+                println!("Eliminando contenedor con PID: '{}' y nombre: '{}'", process.pid, process.name);
+
+                kill_container(&process.name)?;
+            }
         }
+
+        overwrite_file(high, low)?;
+
+        std::thread::sleep(Duration::from_secs(10));
     }
 
-    overwrite_file(high, low)?;
+    println!("Saliendo del programa...");
 
     Ok(())
 }
