@@ -1,4 +1,5 @@
 use serde::Deserialize;
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::{self, Read};
 use std::process::Command;
@@ -55,12 +56,12 @@ fn read_file(path: &str) -> io::Result<SysInfo> {
 
     let system_information: SysInfo = serde_json::from_str(&contents)?; // Se deserializa el contenido JSON.
 
-    println!("{:#?}", system_information);
+    // println!("{:#?}", system_information);
 
     Ok(system_information)
 }
 
-fn sort_and_select_processes(processes: &[Process]) -> (Vec<Process>, Vec<Process>) {
+fn sort_and_select_processes(processes: &[Process]) -> (HashMap<String, u64>, HashMap<String, u64>) {
     /* Ordenar por uso de CPU descendente. Si dos procesos tienen el mismo uso de CPU, se procede a ordenarlos por su memoria. */
     let mut sorted_processes = processes.to_vec(); // Se copian los procesos de un slice a un vector, ya que un slice no puede ser mutado.
 
@@ -75,20 +76,35 @@ fn sort_and_select_processes(processes: &[Process]) -> (Vec<Process>, Vec<Proces
         b.cpu_usage.partial_cmp(&a.cpu_usage).unwrap().then_with(|| b.memory_usage.partial_cmp(&a.memory_usage).unwrap())
     });
 
-    /* Se toman los dos primeros procesos que más recursos consumen.
-     * Se usa 'iter' para crear un iterador sobre el vector de procesos.
-     * Se usa 'take' para tomar los dos primeros elementos del iterador (solamente se han seleccionado, pero no se ha hecho nada más).
-     * Se usa 'cloned' para clonar los elementos seleccionados a un nuevo iterador.
-     * Se usa 'collect' para consumir el iterador y almacenar los elementos en un nuevo vector. */
-    let high_resource_processes: Vec<Process> = sorted_processes.iter().take(2).cloned().collect();
+    let mut high_resource_processes: HashMap<String, u64> = HashMap::new();
+
+    for process in sorted_processes.iter().take(2) {
+        high_resource_processes.insert(process.name.clone(), process.pid);
+    }
 
     sorted_processes.sort_by(|a, b| {
         a.cpu_usage.partial_cmp(&b.cpu_usage).unwrap().then_with(|| a.memory_usage.partial_cmp(&b.memory_usage).unwrap())
     });
 
-    let low_resource_processes: Vec<Process> = sorted_processes.iter().take(3).cloned().collect();
+    let mut low_resource_processes: HashMap<String, u64> = HashMap::new();
+
+    for process in sorted_processes.iter().take(3) {
+        low_resource_processes.insert(process.name.clone(), process.pid);
+    }
 
     (high_resource_processes, low_resource_processes)
+}
+
+fn kill_container(name: &str) -> io::Result<()> {
+    let output = Command::new("docker").args(&["rm", "-f", &name]).output()?;
+
+    if !output.status.success() {
+        let error_message = String::from_utf8_lossy(&output.stderr);
+
+        return Err(io::Error::new(io::ErrorKind::Other, format!("Error al eliminar el contenedor: {}", error_message)));
+    }
+
+    Ok(())
 }
 
 fn main() -> io::Result<()> {
@@ -99,14 +115,22 @@ fn main() -> io::Result<()> {
 
     let (high, low) = sort_and_select_processes(&sysinfo.processes);
 
-    println!("Procesos de alto consumo:");
-    for process in high {
-        println!("{:?}", process);
-    }
+    // println!("Procesos de alto consumo:");
+    // for process in &high {
+    //     println!("{:?}", process);
+    // }
 
-    println!("Procesos de bajo consumo:");
-    for process in low {
-        println!("{:?}", process);
+    // println!("Procesos de bajo consumo:");
+    // for process in &low {
+    //     println!("{:?}", process);
+    // }
+
+    for process in sysinfo.processes {
+        if !high.contains_key(&process.name) && !low.contains_key(&process.name) {
+            println!("Eliminando contenedor con PID: {} y nombre: {}", process.pid, process.name);
+
+            kill_container(&process.name)?;
+        }
     }
 
     Ok(())
