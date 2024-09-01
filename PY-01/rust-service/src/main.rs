@@ -5,6 +5,7 @@ use std::io::{self, BufWriter, Read, Write};
 use std::process::Command;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::thread;
 use std::time::Duration;
 
 #[derive(Clone, Debug, Deserialize)]
@@ -150,17 +151,36 @@ fn main() -> io::Result<()> {
         //     println!("{:?}", process);
         // }
 
+        let mut handles = vec![]; // En este vector se guardarán todos los hilos que se creen.
+
         for process in sysinfo.processes {
             if !high.contains_key(&process.name) && !low.contains_key(&process.name) {
-                println!("Eliminando contenedor con PID: '{}' y nombre: '{}'", process.pid, process.name);
+                let process_name = process.name.clone(); // Se clona para que el código principal no pierda el 'ownership'.
 
-                kill_container(&process.name)?;
+                let handle = thread::spawn(move || {
+                    println!("Eliminando contenedor con nombre '{}'", process_name);
+
+                    if let Err(error) = kill_container(&process_name) {
+                        eprintln!("Ocurrió un error al eliminar el contenedor '{}': {}", process_name, error);
+                    }
+                });
+
+                handles.push(handle);
+            }
+        }
+
+        /* Este bucle espera a que todos los hilos terminen y maneja posibles errores. */
+        for handle in handles {
+            if let Err(error) = handle.join() {
+                eprintln!("Ocurrió un error al esperar a que el hilo termine: {:?}", error);
             }
         }
 
         overwrite_file(high, low)?;
 
-        std::thread::sleep(Duration::from_secs(10));
+        println!("Esperando 10 segundos...");
+
+        thread::sleep(Duration::from_secs(10));
     }
 
     println!("Saliendo del programa...");
