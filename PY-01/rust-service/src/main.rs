@@ -141,15 +141,21 @@ fn main() -> io::Result<()> {
 
         let (high, low) = sort_and_select_processes(&sysinfo.processes);
 
-        // println!("Procesos de alto consumo:");
-        // for process in &high {
-        //     println!("{:?}", process);
-        // }
+        println!("Total de RAM: {} KB", sysinfo.total_ram);
+        println!("RAM libre: {} KB", sysinfo.free_ram);
+        println!("RAM usada: {} KB", sysinfo.used_ram);
 
-        // println!("Procesos de bajo consumo:");
-        // for process in &low {
-        //     println!("{:?}", process);
-        // }
+        println!("Procesos de alto consumo:");
+        for process in &high {
+            println!("{:?}", process);
+        }
+
+        println!("Procesos de bajo consumo:");
+        for process in &low {
+            println!("{:?}", process);
+        }
+
+        println!();
 
         let mut handles = vec![]; // En este vector se guardarán todos los hilos que se creen.
 
