@@ -1,4 +1,8 @@
-use serde::Deserialize;
+use chrono::Utc;
+use reqwest::blocking::Client;
+use reqwest::Error;
+use serde::{Deserialize, Serialize};
+use serde_json::json;
 use std::collections::HashMap;
 use std::fs::{File, OpenOptions};
 use std::io::{self, BufWriter, Read, Write};
@@ -8,7 +12,7 @@ use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 struct Process {
     pid: u64,
     name: String,
@@ -107,6 +111,24 @@ fn kill_container(name: &str) -> io::Result<()> {
     Ok(())
 }
 
+fn send_log(process: &Process) -> Result<(), Error> {
+    let client = Client::new();
+    let timestamp = Utc::now().to_rfc3339();
+
+    let log_message = json!({
+        "timestamp": timestamp,
+        "process": process
+    });
+
+    let response = client.post("http://localhost:80/log").json(&log_message).send()?;
+
+    if !response.status().is_success() {
+        eprintln!("La respuesta del servidor no fue exitosa: {}", response.status());
+    }
+
+    Ok(())
+}
+
 fn overwrite_file(high: HashMap<String, u64>, low: HashMap<String, u64>) -> io::Result<()> {
     let path = "../kernel-module/containers_pid.txt";
     let file = OpenOptions::new().write(true).truncate(true).open(path)?;
@@ -168,6 +190,10 @@ fn main() -> io::Result<()> {
 
                     if let Err(error) = kill_container(&process_name) {
                         eprintln!("Ocurrió un error al eliminar el contenedor '{}': {}", process_name, error);
+                    } else {
+                        if let Err(error) = send_log(&process) {
+                            eprintln!("Ocurrió un error al enviar el registro del contenedor '{}': {}", process_name, error);
+                        }
                     }
                 });
 
