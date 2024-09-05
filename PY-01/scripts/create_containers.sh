@@ -18,5 +18,5 @@ for i in $(seq 1 $NUMBER_CONTAINERS); do
 
     CONTAINER_PID=$(docker inspect --format '{{.State.Pid}}' "$CONTAINER_ID")
 
-    echo "$CONTAINER_NAME-$CONTAINER_PID" >> ../kernel-module/containers_pid.txt
+    echo "$CONTAINER_NAME-$CONTAINER_PID" >> /home/luis-lizama/CLionProjects/SO1_2S2024_202010023/PY-01/kernel-module/containers_pid.txt
 done

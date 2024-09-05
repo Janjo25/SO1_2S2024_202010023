@@ -6,7 +6,7 @@ use serde_json::json;
 use std::collections::HashMap;
 use std::fs::{File, OpenOptions};
 use std::io::{self, BufWriter, Read, Write};
-use std::process::Command;
+use std::process::{Command, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread;
@@ -29,6 +29,19 @@ struct SysInfo {
     free_ram: u64,
     used_ram: u64,
     processes: Vec<Process>,
+}
+
+fn create_cron_job() -> io::Result<()> {
+    let new_job = "* * * * * /home/luis-lizama/CLionProjects/SO1_2S2024_202010023/PY-01/scripts/create_containers.sh\n";
+
+    let mut process = Command::new("crontab").stdin(Stdio::piped()).spawn()?;
+
+    let stdin = process.stdin.as_mut().ok_or(io::Error::new(io::ErrorKind::Other, "Error al abrir la entrada estándar del proceso."))?;
+    stdin.write_all(new_job.as_bytes())?;
+
+    process.wait()?;
+
+    Ok(())
 }
 
 fn execute_exporter() -> io::Result<()> {
@@ -147,6 +160,17 @@ fn overwrite_file(high: HashMap<String, u64>, low: HashMap<String, u64>) -> io::
     Ok(())
 }
 
+fn delete_cron_job() -> io::Result<()> {
+    let mut process = Command::new("crontab").stdin(Stdio::piped()).spawn()?;
+
+    let stdin = process.stdin.as_mut().ok_or(io::Error::new(io::ErrorKind::Other, "Error al abrir la entrada estándar del proceso."))?;
+    stdin.write_all(b"")?;
+
+    process.wait()?;
+
+    Ok(())
+}
+
 fn generate_graphs() -> Result<(), Error> {
     let client = Client::new();
     let response = client.get("http://localhost:80/generate-processes-graph").send()?;
@@ -165,6 +189,10 @@ fn main() -> io::Result<()> {
     ctrlc::set_handler(move || {
         running_clone.store(false, Ordering::SeqCst);
     }).expect("Ocurrió un error al configurar el controlador 'Ctrl+C'.");
+
+    if let Err(error) = create_cron_job() {
+        eprintln!("Ocurrió un error al crear el trabajo programado: {:?}", error);
+    }
 
     while running.load(Ordering::SeqCst) {
         execute_exporter()?;
@@ -224,6 +252,10 @@ fn main() -> io::Result<()> {
         println!("Esperando 10 segundos...");
 
         thread::sleep(Duration::from_secs(10));
+    }
+
+    if let Err(error) = delete_cron_job() {
+        eprintln!("Ocurrió un error al eliminar el trabajo programado: {:?}", error);
     }
 
     if let Err(error) = generate_graphs() {
