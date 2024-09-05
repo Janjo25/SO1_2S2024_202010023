@@ -147,6 +147,17 @@ fn overwrite_file(high: HashMap<String, u64>, low: HashMap<String, u64>) -> io::
     Ok(())
 }
 
+fn generate_graphs() -> Result<(), Error> {
+    let client = Client::new();
+    let response = client.get("http://localhost:80/generate-processes-graph").send()?;
+
+    if !response.status().is_success() {
+        eprintln!("La respuesta del servidor no fue exitosa: {}", response.status());
+    }
+
+    Ok(())
+}
+
 fn main() -> io::Result<()> {
     let running = Arc::new(AtomicBool::new(true));
     let running_clone = Arc::clone(&running);
@@ -213,6 +224,10 @@ fn main() -> io::Result<()> {
         println!("Esperando 10 segundos...");
 
         thread::sleep(Duration::from_secs(10));
+    }
+
+    if let Err(error) = generate_graphs() {
+        eprintln!("Ocurrió un error al generar las gráficas: {:?}", error);
     }
 
     println!("Saliendo del programa...");

@@ -1,7 +1,9 @@
+import collections
 import json
 import os
 
 from fastapi import FastAPI, Body
+from matplotlib import pyplot as plt
 from pydantic import BaseModel
 
 app = FastAPI()
@@ -16,6 +18,32 @@ class Process(BaseModel):
     rss: int
     memory_usage: float
     cpu_usage: float
+
+
+@app.get("/generate-processes-graph")
+def generate_processes_graph():
+    path = "./logs.json"
+
+    if not os.path.exists(path):
+        return {"estado": "no existen registros"}
+
+    with open(path, "r") as file:
+        logs = json.load(file)
+
+    cmd_lines = [log['process']['cmd_line'] for log in logs]
+    cmd_count = collections.Counter(cmd_lines)
+    cmd_labels = list(cmd_count.keys())
+    cmd_frequencies = list(cmd_count.values())
+
+    plt.figure()  # Se crea una instancia de la gráfica. Esto inicia una figura en blanco.
+    plt.bar(cmd_labels, cmd_frequencies)  # Se crea un gráfico de barras con los datos obtenidos.
+    plt.title("Frecuencia de Procesos Eliminados")
+    plt.xlabel("Tipo de Proceso")
+    plt.ylabel("Frecuencia")
+    plt.tight_layout()  # Se ajusta el tamaño de la gráfica para que no se recorten los elementos.
+    plt.savefig("./processes_graph.png")
+
+    return {"estado": "gráfico generado", "ruta": "./processes_graph.png"}
 
 
 def append_to_json(new_data: dict):
