@@ -12,7 +12,7 @@ use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize)]
 struct Process {
     pid: u64,
     name: String,
@@ -23,7 +23,7 @@ struct Process {
     cpu_usage: f64,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Deserialize)]
 struct SysInfo {
     total_ram: u64,
     free_ram: u64,
@@ -124,7 +124,7 @@ fn kill_container(name: &str) -> io::Result<()> {
     Ok(())
 }
 
-fn send_log(process: &Process) -> Result<(), Error> {
+fn send_process_log(process: &Process) -> Result<(), Error> {
     let client = Client::new();
     let timestamp = Utc::now().to_rfc3339();
 
@@ -133,7 +133,7 @@ fn send_log(process: &Process) -> Result<(), Error> {
         "process": process
     });
 
-    let response = client.post("http://localhost:80/log").json(&log_message).send()?;
+    let response = client.post("http://localhost:80/process-log").json(&log_message).send()?;
 
     if !response.status().is_success() {
         eprintln!("La respuesta del servidor no fue exitosa: {}", response.status());
@@ -160,6 +160,37 @@ fn overwrite_file(high: HashMap<String, u64>, low: HashMap<String, u64>) -> io::
     Ok(())
 }
 
+fn send_memory_log(total_ram: u64, free_ram: u64, used_ram: u64) -> Result<(), Error> {
+    #[derive(Serialize)]
+    struct Memory {
+        total_ram: u64,
+        free_ram: u64,
+        used_ram: u64,
+    }
+
+    let client = Client::new();
+    let timestamp = Utc::now().to_rfc3339();
+
+    let memory = Memory {
+        total_ram,
+        free_ram,
+        used_ram,
+    };
+
+    let log_message = json!({
+        "timestamp": timestamp,
+        "memory": memory
+    });
+
+    let response = client.post("http://localhost:80/memory-log").json(&log_message).send()?;
+
+    if !response.status().is_success() {
+        eprintln!("La respuesta del servidor no fue exitosa: {}", response.status());
+    }
+
+    Ok(())
+}
+
 fn delete_cron_job() -> io::Result<()> {
     let mut process = Command::new("crontab").stdin(Stdio::piped()).spawn()?;
 
@@ -173,10 +204,15 @@ fn delete_cron_job() -> io::Result<()> {
 
 fn generate_graphs() -> Result<(), Error> {
     let client = Client::new();
-    let response = client.get("http://localhost:80/generate-processes-graph").send()?;
 
-    if !response.status().is_success() {
-        eprintln!("La respuesta del servidor no fue exitosa: {}", response.status());
+    let processes_response = client.get("http://localhost:80/generate-processes-graph").send()?;
+    if !processes_response.status().is_success() {
+        eprintln!("La respuesta del servidor no fue exitosa: {}", processes_response.status());
+    }
+
+    let memory_response = client.get("http://localhost:80/generate-memory-graph").send()?;
+    if !memory_response.status().is_success() {
+        eprintln!("La respuesta del servidor no fue exitosa: {}", memory_response.status());
     }
 
     Ok(())
@@ -230,7 +266,7 @@ fn main() -> io::Result<()> {
                     if let Err(error) = kill_container(&process_name) {
                         eprintln!("Ocurrió un error al eliminar el contenedor '{}': {}", process_name, error);
                     } else {
-                        if let Err(error) = send_log(&process) {
+                        if let Err(error) = send_process_log(&process) {
                             eprintln!("Ocurrió un error al enviar el registro del contenedor '{}': {}", process_name, error);
                         }
                     }
@@ -248,6 +284,10 @@ fn main() -> io::Result<()> {
         }
 
         overwrite_file(high, low)?;
+
+        if let Err(error) = send_memory_log(sysinfo.total_ram, sysinfo.free_ram, sysinfo.used_ram) {
+            eprintln!("Ocurrió un error al enviar el registro de memoria: {:?}", error);
+        }
 
         println!("Esperando 10 segundos...");
 

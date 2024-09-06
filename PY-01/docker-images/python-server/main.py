@@ -4,12 +4,17 @@ import os
 
 from fastapi import FastAPI, Body
 from matplotlib import pyplot as plt
-from pydantic import BaseModel
+from pydantic import BaseModel  # Se usa para definir la estructura de los datos que se reciben en el endpoint.
 
 app = FastAPI()
 
 
-# Se usa 'BaseModel' para definir la estructura de los datos que se reciben en el endpoint '/log'
+class Memory(BaseModel):
+    total_ram: int
+    free_ram: int
+    used_ram: int
+
+
 class Process(BaseModel):
     pid: int
     name: str
@@ -22,7 +27,7 @@ class Process(BaseModel):
 
 @app.get("/generate-processes-graph")
 def generate_processes_graph():
-    path = "./logs.json"
+    path = "./processes_logs.json"
 
     if not os.path.exists(path):
         return {"estado": "no existen registros"}
@@ -46,8 +51,13 @@ def generate_processes_graph():
     return {"estado": "gráfico generado", "ruta": "./processes_graph.png"}
 
 
-def append_to_json(new_data: dict):
-    path = "./logs.json"
+def append_to_json(flag, new_data: dict):
+    path = ""
+
+    if flag == "memory":
+        path = "./memory_logs.json"
+    elif flag == "process":
+        path = "./processes_logs.json"
 
     if not os.path.exists(path):
         with open(path, "w") as file:
@@ -61,12 +71,23 @@ def append_to_json(new_data: dict):
             json.dump(existing_data, file, indent=4)
 
 
-@app.post("/log")
+@app.post("/memory-log")
+def log_memory(timestamp: str = Body(...), memory: Memory = Body(...)):
+    """Se coloca 'Body(...)' en los parámetros, ya que se enviaron dos datos en el cuerpo de la petición.
+    Es necesario descomponerlos en dos parámetros para poder trabajar con ellos."""
+    log_entry = {"timestamp": timestamp, "memory": memory.model_dump()}
+
+    append_to_json("memory", log_entry)
+
+    return {"estado": "éxito"}
+
+
+@app.post("/process-log")
 def log_process(timestamp: str = Body(...), process: Process = Body(...)):
     """Se coloca 'Body(...)' en los parámetros, ya que se enviaron dos datos en el cuerpo de la petición.
     Es necesario descomponerlos en dos parámetros para poder trabajar con ellos."""
     log_entry = {"timestamp": timestamp, "process": process.model_dump()}
 
-    append_to_json(log_entry)
+    append_to_json("process", log_entry)
 
     return {"estado": "éxito"}
