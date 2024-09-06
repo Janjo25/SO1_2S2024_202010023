@@ -25,6 +25,31 @@ class Process(BaseModel):
     cpu_usage: float
 
 
+@app.get("/generate-memory-graph")
+def generate_memory_graph():
+    path = "./memory_logs.json"
+
+    if not os.path.exists(path):
+        return {"estado": "no existen registros"}
+
+    with open(path, "r") as file:
+        logs = json.load(file)
+
+    timestamps = [log['timestamp'] for log in logs]
+    used_memory = [log['memory']['used_ram'] for log in logs]
+
+    plt.figure()  # Se crea una instancia de la gráfica. Esto inicia una figura en blanco.
+    plt.plot(timestamps, used_memory, marker='o')  # Se crea un gráfico de líneas con los datos obtenidos.
+    plt.title("Uso de Memoria")
+    plt.xlabel("Tiempo")
+    plt.ylabel("Memoria Usada (KB)")
+    plt.xticks(rotation=45)  # Se rota el texto del eje X para que no se superpongan los datos.
+    plt.tight_layout()  # Se ajusta el tamaño de la gráfica para que no se recorten los elementos.
+    plt.savefig("./memory_graph.png")
+
+    return {"estado": "gráfico generado", "ruta": "./memory_graph.png"}
+
+
 @app.get("/generate-processes-graph")
 def generate_processes_graph():
     path = "./processes_logs.json"

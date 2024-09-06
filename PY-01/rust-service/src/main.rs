@@ -34,7 +34,7 @@ struct SysInfo {
 fn create_cron_job() -> io::Result<()> {
     let new_job = "* * * * * /home/luis-lizama/CLionProjects/SO1_2S2024_202010023/PY-01/scripts/create_containers.sh\n";
 
-    let mut process = Command::new("crontab").stdin(Stdio::piped()).spawn()?;
+    let mut process = Command::new("crontab").stdin(Stdio::piped()).stdout(Stdio::null()).spawn()?;
 
     let stdin = process.stdin.as_mut().ok_or(io::Error::new(io::ErrorKind::Other, "Error al abrir la entrada estándar del proceso."))?;
     stdin.write_all(new_job.as_bytes())?;
@@ -192,7 +192,7 @@ fn send_memory_log(total_ram: u64, free_ram: u64, used_ram: u64) -> Result<(), E
 }
 
 fn delete_cron_job() -> io::Result<()> {
-    let mut process = Command::new("crontab").stdin(Stdio::piped()).spawn()?;
+    let mut process = Command::new("crontab").stdin(Stdio::piped()).stdout(Stdio::null()).spawn()?;
 
     let stdin = process.stdin.as_mut().ok_or(io::Error::new(io::ErrorKind::Other, "Error al abrir la entrada estándar del proceso."))?;
     stdin.write_all(b"")?;
