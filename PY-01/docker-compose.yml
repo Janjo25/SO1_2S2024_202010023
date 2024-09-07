@@ -1,0 +1,7 @@
+services:
+  python-server:
+    build: ./docker-images/python-server
+    ports:
+      - "80:80"
+    volumes:
+      - ./docker-images/python-server:/app
