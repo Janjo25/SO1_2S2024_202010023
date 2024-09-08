@@ -1,4 +1,4 @@
-use chrono::Utc;
+use chrono::{Local, Utc};
 use reqwest::blocking::Client;
 use reqwest::Error;
 use serde::{Deserialize, Serialize};
@@ -144,7 +144,7 @@ fn send_process_log(process: &Process) -> Result<(), Error> {
 
 fn overwrite_file(high: HashMap<String, u64>, low: HashMap<String, u64>) -> io::Result<()> {
     let path = "../kernel-module/containers_pid.txt";
-    let file = OpenOptions::new().write(true).truncate(true).open(path)?;
+    let file = OpenOptions::new().create(true).truncate(true).write(true).open(path)?;
     let mut writer = BufWriter::new(file);
 
     for (name, pid) in high.iter() {
@@ -169,7 +169,7 @@ fn send_memory_log(total_ram: u64, free_ram: u64, used_ram: u64) -> Result<(), E
     }
 
     let client = Client::new();
-    let timestamp = Utc::now().to_rfc3339();
+    let timestamp = Local::now().to_rfc3339();
 
     let memory = Memory {
         total_ram,

@@ -2,8 +2,10 @@ import collections
 import json
 import os
 
+import pandas as pd
 from fastapi import FastAPI, Body
 from matplotlib import pyplot as plt
+from matplotlib.ticker import MaxNLocator
 from pydantic import BaseModel  # Se usa para definir la estructura de los datos que se reciben en el endpoint.
 
 app = FastAPI()
@@ -35,15 +37,21 @@ def generate_memory_graph():
     with open(path, "r") as file:
         logs = json.load(file)
 
-    timestamps = [log['timestamp'] for log in logs]
+    timestamps = pd.to_datetime([log['timestamp'] for log in logs])
     used_memory = [log['memory']['used_ram'] for log in logs]
+
+    timestamps = timestamps.strftime('%H:%M:%S')  # Se formatean las fechas para que se vean más legibles.
 
     plt.figure()  # Se crea una instancia de la gráfica. Esto inicia una figura en blanco.
     plt.plot(timestamps, used_memory, marker='o')  # Se crea un gráfico de líneas con los datos obtenidos.
+
     plt.title("Uso de Memoria")
     plt.xlabel("Tiempo")
     plt.ylabel("Memoria Usada (KB)")
+
+    plt.gca().xaxis.set_major_locator(MaxNLocator(nbins=6))
     plt.xticks(rotation=45)  # Se rota el texto del eje X para que no se superpongan los datos.
+
     plt.tight_layout()  # Se ajusta el tamaño de la gráfica para que no se recorten los elementos.
     plt.savefig("./memory_graph.png")
 
@@ -67,9 +75,11 @@ def generate_processes_graph():
 
     plt.figure()  # Se crea una instancia de la gráfica. Esto inicia una figura en blanco.
     plt.bar(cmd_labels, cmd_frequencies)  # Se crea un gráfico de barras con los datos obtenidos.
+
     plt.title("Frecuencia de Procesos Eliminados")
     plt.xlabel("Tipo de Proceso")
     plt.ylabel("Frecuencia")
+
     plt.tight_layout()  # Se ajusta el tamaño de la gráfica para que no se recorten los elementos.
     plt.savefig("./processes_graph.png")
 
