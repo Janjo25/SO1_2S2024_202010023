@@ -1,0 +1,11 @@
+apiVersion: v1 # Esta es la versión de la API para el recurso Service. En este caso, estamos usando la versión estable.
+kind: Service # Esto especifica que el recurso que se está creando es un Service.
+metadata:
+  name: nginx-service
+spec: # Esta sección contiene la especificación del recurso.
+  type: LoadBalancer # Se usa un LoadBalancer para exponer el servicio a través de una dirección IP pública.
+  ports:
+    - port: 80 # El puerto en el que el servicio estará disponible.
+      targetPort: 80 # El puerto en el que el contenedor del pod está escuchando.
+  selector:
+    app: nginx

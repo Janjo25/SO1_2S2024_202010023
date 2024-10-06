@@ -1,0 +1,19 @@
+apiVersion: apps/v1 # Esta es la versión de la API para el recurso Deployment. En este caso, estamos usando la versión estable.
+kind: Deployment # Esto especifica que el recurso que se está creando es un Deployment.
+metadata:
+  name: nginx-deployment
+spec:
+  replicas: 1 # El número de réplicas de pods a ejecutar. Un pod es la unidad más pequeña y básica de ejecución en Kubernetes.
+  selector:
+    matchLabels: # Esta sección especifica qué pods se seleccionarán para este Deployment.
+      app: nginx
+  template: # Esta sección contiene la plantilla para los pods que se crearán.
+    metadata:
+      labels:
+        app: nginx # La etiqueta aplicada a los pods creados por este Deployment.
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:latest
+          ports:
+            - containerPort: 80
