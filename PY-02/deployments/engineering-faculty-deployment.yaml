@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: engineering-faculty-deployment
+  labels:
+    app: engineering-faculty
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: engineering-faculty
+  template:
+    metadata:
+      labels:
+        app: engineering-faculty
+    spec:
+      containers:
+        - name: engineering-faculty-container
+          image: engineering:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080

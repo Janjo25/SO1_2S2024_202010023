@@ -1,0 +1,11 @@
+[package]
+authors = ["Luis Lizama"]
+edition = "2021"
+name = "engineering"
+version = "0.1.0"
+
+[dependencies]
+
+[[bin]]
+name = "engineering"
+path = "src/main.rs"
