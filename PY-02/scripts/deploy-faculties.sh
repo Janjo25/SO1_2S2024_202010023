@@ -16,6 +16,18 @@ docker build --no-cache -t engineering:latest ../src/engineering
 echo "Borrando deployments actuales..."
 kubectl delete deployment agronomy-faculty-deployment engineering-faculty-deployment
 
+# Borrar los servicios actuales.
+echo "Borrando servicios actuales..."
+kubectl delete service agronomy-faculty-service engineering-faculty-service
+
+# Borrar el Ingress actual.
+echo "Borrando el Ingress actual..."
+kubectl delete ingress faculties-ingress
+
+# Borrar los HPA actuales.
+echo "Borrando los HPA actuales..."
+kubectl delete hpa agronomy-faculty-hpa engineering-faculty-hpa
+
 # Aplicar el deployment de Agronomía.
 echo "Aplicando el deployment para Agronomía..."
 kubectl apply -f ../deployments/agronomy-faculty-deployment.yaml
@@ -36,6 +48,14 @@ kubectl apply -f ../services/engineering-faculty-service.yaml
 echo "Aplicando el Ingress para las facultades..."
 kubectl apply -f ../ingresses/faculties-ingress.yaml
 
+# Aplicar el HPA de Agronomía.
+echo "Aplicando el HPA para Agronomía..."
+kubectl apply -f ../hpa/agronomy-faculty-hpa.yaml
+
+# Aplicar el HPA de Ingeniería.
+echo "Aplicando el HPA para Ingeniería..."
+kubectl apply -f ../hpa/engineering-faculty-hpa.yaml
+
 sleep 5
 
 # Verificar los pods.
@@ -45,5 +65,13 @@ kubectl get pods
 # Verificar los servicios.
 echo "Verificando el estado de los servicios..."
 kubectl get services
+
+# Verificar el Ingress.
+echo "Verificando el estado del Ingress..."
+kubectl get ingress
+
+# Verificar los HPA.
+echo "Verificando el estado del HPA..."
+kubectl get hpa
 
 echo "¡El despliegue ha finalizado!"
