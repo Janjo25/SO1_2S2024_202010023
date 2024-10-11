@@ -32,6 +32,10 @@ kubectl apply -f ../deployments/engineering-faculty-deployment.yaml
 echo "Aplicando el servicio para Ingeniería..."
 kubectl apply -f ../services/engineering-faculty-service.yaml
 
+# Aplicar el Ingress de las facultades.
+echo "Aplicando el Ingress para las facultades..."
+kubectl apply -f ../ingresses/faculties-ingress.yaml
+
 sleep 5
 
 # Verificar los pods.
