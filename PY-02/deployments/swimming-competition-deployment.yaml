@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: swimming-competition-deployment
+  labels:
+    app: swimming-competition
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: swimming-competition
+  template:
+    metadata:
+      labels:
+        app: swimming-competition
+    spec:
+      containers:
+        - name: swimming-competition-container
+          image: swimming:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
