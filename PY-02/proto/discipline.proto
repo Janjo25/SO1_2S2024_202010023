@@ -1,0 +1,60 @@
+/*
+Este archivo usa gRPC para la comunicación entre servicios. Aquí se definen los servicios y mensajes en un archivo con
+extensión '.proto'.
+El archivo con extensión '.proto' es como un plano, donde se especifican los servicios (funciones remotas) y los tipos
+de datos (mensajes) que se van a intercambiar entre el cliente y el servidor.
+
+Pasos:
+1. Primero, se define el archivo '.proto' que contiene los servicios y mensajes necesarios.
+2. Luego, este archivo se compila con el siguiente comando 'protoc', que genera los archivos '.pb.go' necesarios:
+
+   protoc --go_out=paths=source_relative:. --go-grpc_out=paths=source_relative:. discipline.proto
+
+   Este comando asegura que los archivos generados se mantengan en el mismo directorio sin crear subcarpetas
+   adicionales.
+
+3. Una vez generado el código, se puede importar en los archivos Go del proyecto usando la ruta definida en el campo
+   'go_package' del archivo '.proto'.
+4. Las funciones generadas por gRPC se pueden utilizar de manera sencilla llamando a los métodos correspondientes en el
+   código Go.
+
+En resumen, el archivo '.proto' se compila para generar código Go que implementa los servicios definidos, y estos se
+pueden utilizar de forma directa en el código importando la "librería" generada por gRPC.
+*/
+
+syntax = "proto3";
+
+// Este campo define el nombre y la ruta del paquete que se generará en Go.
+option go_package = "github.com/janjo25/proto";
+
+/*
+Este es un nombre interno para agrupar los servicios y mensajes dentro del archivo '.proto'.
+No afecta cómo se importará el código en Go y puede cambiarse por cualquier otro nombre.
+*/
+package discipline;
+
+/*
+En gRPC, los servicios y mensajes se utilizan para la comunicación entre el cliente y el servidor.
+
+- **Mensajes**: Son las estructuras de datos que se envían entre el cliente y el servidor. Cada mensaje contiene campos
+  con datos que el cliente envía al servidor (como el ID del estudiante y la disciplina) o que el servidor devuelve al
+  cliente (como la respuesta de éxito o fallo).
+- **Servicios**: Son las "funciones remotas" que se ejecutan en el servidor. Estas funciones toman los mensajes de
+  entrada y devuelven mensajes de salida como respuesta.
+
+En resumen, los mensajes contienen los datos que viajan entre cliente y servidor, y los servicios son las funciones que
+puedes invocar remotamente para ejecutar operaciones en el servidor.
+*/
+
+service DisciplineService {
+  rpc Assign (DisciplineRequest) returns (DisciplineResponse);
+}
+
+message DisciplineRequest {
+  int32 studentId = 1;
+  string discipline = 2;
+}
+
+message DisciplineResponse {
+  bool success = 1;
+}
