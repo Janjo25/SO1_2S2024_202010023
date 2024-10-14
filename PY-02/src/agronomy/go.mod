@@ -1,3 +1,3 @@
-module github.com/Janjo25/src/agronomy
+module github.com/janjo25/src/agronomy
 
 go 1.23
