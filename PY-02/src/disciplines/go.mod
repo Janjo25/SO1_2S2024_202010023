@@ -1,4 +1,4 @@
-module github.com/janjo25/src/agronomy
+module github.com/janjo25/src/disciplines
 
 go 1.23
 

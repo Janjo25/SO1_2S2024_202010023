@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	pb "github.com/janjo25/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -11,7 +10,7 @@ import (
 )
 
 func assignStudent(studentID int, discipline string, serverAddress string) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	client, err := grpc.NewClient(serverAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -34,31 +33,23 @@ func assignStudent(studentID int, discipline string, serverAddress string) {
 
 	response, err := disciplineClient.Assign(ctx, request)
 	if err != nil {
-		log.Fatalf("Ocurrió un error al llamar al servicio: %v", err)
+		log.Printf("Ocurrió un error al llamar al servicio: %v", err)
 	}
 
 	if response.Success {
-		fmt.Printf("El estudiante con ID %d ha sido asignado a la disciplina %s", studentID, discipline)
+		log.Printf("El estudiante con ID '%d' ha sido asignado a la disciplina '%s'", studentID, discipline)
 	} else {
-		fmt.Printf("No se ha podido asignar al estudiante con ID %d a la disciplina %s", studentID, discipline)
+		log.Printf("No se ha podido asignar al estudiante con ID '%d' a la disciplina '%s'", studentID, discipline)
 	}
 }
 
 func main() {
 	studentID := 1
 	discipline := "athletics"
+	serverAddress := "disciplines-service:80"
 
-	serverAddresses := map[string]string{
-		"athletics": "athletics-competition-service:8080",
-		"boxing":    "boxing-competition-service:8080",
-		"swimming":  "swimming-competition-service:8080",
+	for {
+		assignStudent(studentID, discipline, serverAddress)
+		time.Sleep(5 * time.Second)
 	}
-
-	serverAddress, exists := serverAddresses[discipline]
-
-	if !exists {
-		log.Fatalf("La disciplina %s no existe", discipline)
-	}
-
-	assignStudent(studentID, discipline, serverAddress)
 }

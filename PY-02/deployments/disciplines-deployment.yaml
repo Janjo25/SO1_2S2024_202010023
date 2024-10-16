@@ -1,22 +1,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: boxing-competition-deployment
+  name: disciplines-deployment
   labels:
-    app: boxing-competition
+    app: disciplines
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: boxing-competition
+      app: disciplines
   template:
     metadata:
       labels:
-        app: boxing-competition
+        app: disciplines
     spec:
       containers:
-        - name: boxing-competition-container
-          image: boxing:latest
+        - name: disciplines-container
+          image: disciplines:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080

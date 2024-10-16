@@ -13,7 +13,7 @@ echo "Verificando el estado del Ingress..."
 kubectl get ingress
 
 # Obtener los HPA actuales.
-echo "Verificando el estado del HPA..."
+echo "Verificando el estado de los HPA..."
 kubectl get hpa
 
-echo "¡El despliegue ha finalizado!"
+echo "¡Los recursos actuales han sido obtenidos!"

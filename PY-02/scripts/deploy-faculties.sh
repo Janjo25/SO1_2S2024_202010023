@@ -6,19 +6,23 @@ eval $(minikube docker-env)
 
 # Construir la imagen para Agronomía.
 echo "Construyendo la imagen para Agronomía..."
-docker build --no-cache -t agronomy:latest ../src/agronomy
+docker build --no-cache -t agronomy:latest -f ../src/agronomy/Dockerfile ..
 
 # Construir la imagen para Ingeniería.
 echo "Construyendo la imagen para Ingeniería..."
 docker build --no-cache -t engineering:latest ../src/engineering
 
+# Construir la imagen para las disciplinas.
+echo "Construyendo la imagen para las disciplinas..."
+docker build --no-cache -t disciplines:latest -f ../src/disciplines/Dockerfile ..
+
 # Borrar los deployments actuales.
 echo "Borrando deployments actuales..."
-kubectl delete deployment agronomy-faculty-deployment engineering-faculty-deployment
+kubectl delete deployment agronomy-faculty-deployment engineering-faculty-deployment disciplines-deployment
 
 # Borrar los servicios actuales.
 echo "Borrando servicios actuales..."
-kubectl delete service agronomy-faculty-service engineering-faculty-service
+kubectl delete service agronomy-faculty-service engineering-faculty-service disciplines-service
 
 # Borrar el Ingress actual.
 echo "Borrando el Ingress actual..."
@@ -43,6 +47,14 @@ kubectl apply -f ../deployments/engineering-faculty-deployment.yaml
 # Aplicar el servicio de Ingeniería.
 echo "Aplicando el servicio para Ingeniería..."
 kubectl apply -f ../services/engineering-faculty-service.yaml
+
+# Aplicar los deployments para las disciplinas.
+echo "Aplicando el deployment para las disciplinas..."
+kubectl apply -f ../deployments/disciplines-deployment.yaml
+
+# Aplicar los servicios para las disciplinas.
+echo "Aplicando el servicio para las disciplinas..."
+kubectl apply -f ../services/disciplines-service.yaml
 
 # Aplicar el Ingress de las facultades.
 echo "Aplicando el Ingress para las facultades..."
