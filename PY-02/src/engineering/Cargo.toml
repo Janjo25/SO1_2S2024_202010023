@@ -1,11 +1,18 @@
 [package]
-authors = ["Luis Lizama"]
-edition = "2021"
 name = "engineering"
 version = "0.1.0"
-
-[dependencies]
+authors = ["Luis Lizama"]
+edition = "2021"
 
 [[bin]]
 name = "engineering"
 path = "src/main.rs"
+
+[dependencies]
+prost = "0.13.0"
+prost-types = "0.13.0"
+tokio = { version = "1.40.0", features = ["full"] }
+tonic = "0.12.0"
+
+[build-dependencies]
+tonic-build = "0.12.0"

@@ -1,26 +1,26 @@
-FROM rust:1.80 AS builder
+FROM rust:1.81.0 AS builder
 LABEL authors="Luis Lizama"
 
 WORKDIR /app
 
 # Copia el archivo 'Cargo.toml' y 'Cargo.lock' y descarga dependencias.
-COPY Cargo.toml Cargo.lock ./
-RUN cargo fetch
+COPY ./src/engineering/Cargo.toml ./src/engineering/Cargo.lock ./src/engineering/
+RUN cd ./src/engineering && cargo fetch
 
-# Copia el código fuente al contenedor.
-COPY . .
+# Copia el código fuente y los Protocol Buffers al contenedor.
+COPY ./proto ./proto
+COPY ./src/engineering ./src/engineering
+
+# Instala el compilador de Protocol Buffers.
+RUN apt-get update && apt-get install -y protobuf-compiler
 
 # Compila la aplicación.
-RUN cargo build --release
+RUN cd ./src/engineering && cargo build --release
 
 # Crea una imagen mínima para ejecutar la aplicación.
 FROM debian:bookworm-slim
 
-# Instala las versiones necesarias de GLIBC.
-RUN apt-get update && apt-get install -y libc6
+# Copia el binario al contenedor.
+COPY --from=builder /app/src/engineering/target/release/engineering /app/src/engineering/engineering
 
-# Copia el binario compilado al contenedor.
-# La ruta que se ha especificado es el lugar estándar que se usa para los programas que deseamos ejecutar globalmente.
-COPY --from=builder /app/target/release/engineering /usr/local/bin/engineering
-
-CMD ["engineering"]
+CMD ["./app/src/engineering/engineering"]

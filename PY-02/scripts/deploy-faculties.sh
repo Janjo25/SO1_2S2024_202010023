@@ -10,7 +10,7 @@ docker build --no-cache -t agronomy:latest -f ../src/agronomy/Dockerfile ..
 
 # Construir la imagen para Ingeniería.
 echo "Construyendo la imagen para Ingeniería..."
-docker build --no-cache -t engineering:latest ../src/engineering
+docker build --no-cache -t engineering:latest -f ../src/engineering/Dockerfile ..
 
 # Construir la imagen para las disciplinas.
 echo "Construyendo la imagen para las disciplinas..."
