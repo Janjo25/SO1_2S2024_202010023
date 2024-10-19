@@ -51,8 +51,10 @@ service DisciplineService {
 }
 
 message DisciplineRequest {
-  int32 studentId = 1;
-  string discipline = 2;
+  string name = 1;
+  int32 age = 2;
+  string faculty = 3;
+  int32 discipline = 4;
 }
 
 message DisciplineResponse {

@@ -36,14 +36,14 @@ func coinToss() bool {
 }
 
 func (server *athleticsServer) Assign(ctx context.Context, request *pb.DisciplineRequest) (*pb.DisciplineResponse, error) {
-	fmt.Printf("Estudiante con ID '%d' compitiendo...\n", request.StudentId)
+	fmt.Printf("Estudiante con nombre '%s' compitiendo en la disciplina '%d'...\n", request.Name, request.Discipline)
 
 	won := coinToss()
 
-	log.Printf("¿Estudiante con ID '%d' ganó la competencia? %t\n", request.StudentId, won)
+	log.Printf("¿Estudiante con nombre '%s' ganó la competencia en la disciplina '%d'? %v\n", request.Name, request.Discipline, won)
 
 	return &pb.DisciplineResponse{
-		Success: won,
+		Success: true,
 	}, nil
 }
 
