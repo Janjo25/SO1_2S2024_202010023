@@ -7,20 +7,17 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: agronomy.local
+    - host: olympics.local # Remover cuando se despliegue en GKE, ya que no se configurará el DNS.
       http:
         paths:
-          - path: /
+          - path: /agronomy
             pathType: Prefix
             backend:
               service:
                 name: agronomy-faculty-service
                 port:
                   number: 80
-    - host: engineering.local
-      http:
-        paths:
-          - path: /
+          - path: /engineering
             pathType: Prefix
             backend:
               service:

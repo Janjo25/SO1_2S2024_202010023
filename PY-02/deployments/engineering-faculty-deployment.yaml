@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: engineering-faculty-container
-          image: engineering:latest
+          image: engineering:latest # Remplazar a 'gcr.io/<PROJECT_ID>/engineering:latest' para que Kubernetes en GKE pueda acceder a la imagen.
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080

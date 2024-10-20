@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: agronomy-faculty-container
-          image: agronomy:latest
+          image: agronomy:latest # Remplazar a 'gcr.io/<PROJECT_ID>/agronomy:latest' para que Kubernetes en GKE pueda acceder a la imagen.
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
