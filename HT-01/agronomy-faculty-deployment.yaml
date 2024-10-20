@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agronomy-faculty-deployment
+  labels:
+    app: agronomy-faculty
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: agronomy-faculty
+  template:
+    metadata:
+      labels:
+        app: agronomy-faculty
+    spec:
+      containers:
+        - name: agronomy-faculty-container
+          image: agronomy:latest # Remplazar a 'gcr.io/<PROJECT_ID>/agronomy:latest' para que Kubernetes en GKE pueda acceder a la imagen.
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
