@@ -13,7 +13,7 @@ import (
 )
 
 /*
-La estructura 'athleticsServer' representa el servidor para el servicio de disciplinas en gRPC.
+La estructura 'disciplinesServer' representa el servidor para el servicio de disciplinas en gRPC.
 
 - Este tipo (struct) se define para manejar las solicitudes que lleguen a este servicio.
 - Al heredar de 'pb.UnimplementedDisciplineServiceServer', se asegura que nuestro servidor tenga todas las
@@ -22,10 +22,11 @@ La estructura 'athleticsServer' representa el servidor para el servicio de disci
   el servidor no tendría la lógica de negocio asociada. Esta plantilla nos ayuda a evitar errores al implementar los
   métodos requeridos.
 
-En resumen, 'athleticsServer' es el modelo que se encargará de las solicitudes, y
+En resumen, 'disciplinesServer' es el modelo que se encargará de las solicitudes, y
 'pb.UnimplementedDisciplineServiceServer' nos proporciona una base para asegurarnos de que todo esté en orden.
 */
-type athleticsServer struct {
+type disciplinesServer struct {
+	kafkaProducer sarama.SyncProducer
 	pb.UnimplementedDisciplineServiceServer
 }
 
@@ -51,7 +52,7 @@ func createKafkaProducer(brokers []string) (sarama.SyncProducer, error) {
 	return producer, nil
 }
 
-func (server *athleticsServer) Assign(_ context.Context, request *pb.DisciplineRequest) (*pb.DisciplineResponse, error) {
+func (server *disciplinesServer) Assign(_ context.Context, request *pb.DisciplineRequest) (*pb.DisciplineResponse, error) {
 	fmt.Printf("Estudiante con nombre '%s' compitiendo en la disciplina '%d'...\n", request.Name, request.Discipline)
 
 	won := coinToss()
@@ -61,28 +62,13 @@ func (server *athleticsServer) Assign(_ context.Context, request *pb.DisciplineR
 	// Crea un mensaje con el resultado de la competencia para enviar a Kafka.
 	message := fmt.Sprintf("Nombre: %s, Edad: %d, Facultad: %s, Disciplina: %d, Ganó: %v", request.Name, request.Age, request.Faculty, request.Discipline, won)
 
-	// Crea un productor de Kafka. Un productor es lo que se utiliza para enviar mensajes a un topic de Kafka.
-	producer, err := createKafkaProducer([]string{"kafka-cluster:9092"})
-	if err != nil {
-		log.Printf("Ocurrió un error al crear el productor de Kafka: %v", err)
-
-		return nil, err
-	}
-
-	defer func(producer sarama.SyncProducer) {
-		err = producer.Close()
-		if err != nil {
-			log.Printf("Ocurrió un error al cerrar el productor de Kafka: %v", err)
-		}
-	}(producer)
-
 	// Publica el mensaje en el topic 'olympics-results' de Kafka.
 	kafkaMessage := &sarama.ProducerMessage{
 		Topic: "olympics-results",
 		Value: sarama.StringEncoder(message),
 	}
 
-	_, _, err = producer.SendMessage(kafkaMessage)
+	_, _, err := server.kafkaProducer.SendMessage(kafkaMessage)
 	if err != nil {
 		log.Printf("Ocurrió un error al enviar mensaje a Kafka: %v", err)
 
@@ -95,6 +81,24 @@ func (server *athleticsServer) Assign(_ context.Context, request *pb.DisciplineR
 }
 
 func main() {
+	// Crea un productor de Kafka. Un productor es lo que se utiliza para enviar mensajes a un topic de Kafka.
+	brokers := []string{"kafka-cluster:9092"}
+	producer, err := createKafkaProducer(brokers)
+	if err != nil {
+		log.Printf("Ocurrió un error al crear el productor de Kafka: %v", err)
+	}
+
+	defer func(producer sarama.SyncProducer) {
+		err = producer.Close()
+		if err != nil {
+			log.Printf("Ocurrió un error al cerrar el productor de Kafka: %v", err)
+		}
+	}(producer)
+
+	server := &disciplinesServer{
+		kafkaProducer: producer,
+	}
+
 	listener, err := net.Listen("tcp", ":8080")
 	if err != nil {
 		log.Fatalf("No se pudo establecer la conexión en el puerto 8080: %v", err)
@@ -106,7 +110,7 @@ func main() {
 		Esto vincula la lógica de negocio del servicio con el servidor, permitiendo que el servidor maneje las solicitudes.
 	*/
 	grpcServer := grpc.NewServer()
-	pb.RegisterDisciplineServiceServer(grpcServer, &athleticsServer{})
+	pb.RegisterDisciplineServiceServer(grpcServer, server)
 
 	fmt.Println("Servidor de competencias iniciado en el puerto 8080...")
 
