@@ -16,7 +16,19 @@ spec:
     spec:
       containers:
         - name: agronomy-faculty-container
-          image: agronomy:latest # Remplazar a 'gcr.io/<PROJECT_ID>/agronomy:latest' para que Kubernetes en GKE pueda acceder a la imagen.
-          imagePullPolicy: IfNotPresent
+          image: agronomy:latest # Remplazar a 'gcr.io/<PROJECT-ID>/agronomy:latest' para que Kubernetes en GKE pueda acceder a la imagen.
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
+          readinessProbe: # Verifica si la aplicación está lista para recibir tráfico.
+            httpGet:
+              path: /agronomy/healthz # Si la respuesta es exitosa, el pod es marcado como listo para recibir tráfico.
+              port: 8080
+            initialDelaySeconds: 30 # Espera 30 segundos antes de realizar la primera verificación.
+            periodSeconds: 10 # Realiza la verificación cada 10 segundos.
+          livenessProbe:
+            httpGet:
+              path: /agronomy/healthz # Si la respuesta es exitosa, el pod es marcado como saludable.
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10

@@ -4,11 +4,14 @@ metadata:
   name: engineering-faculty-service
   labels:
     app: engineering-faculty
+  annotations:
+    cloud.google.com/healthcheck-path: "/engineering/healthz" # Ruta que Google Cloud usará para verificar la salud del servicio.
+    cloud.google.com/neg: '{"ingress": true}' # Configura el uso de un Network Endpoint Group para optimizar el tráfico a través del Ingress.
 spec:
+  type: LoadBalancer
   selector:
     app: engineering-faculty
   ports:
     - protocol: TCP
       port: 80
       targetPort: 8080
-  type: LoadBalancer

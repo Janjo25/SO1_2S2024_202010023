@@ -3,9 +3,9 @@ kind: Ingress
 metadata:
   name: faculties-ingress
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
+    kubernetes.io/ingress.class: "gce"
 spec:
-  ingressClassName: nginx
+  ingressClassName: gce
   rules:
     - host: olympics.local # Remover cuando se despliegue en GKE, ya que no se configurará el DNS.
       http:

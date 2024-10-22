@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: disciplines-container
-          image: disciplines:latest # Remplazar a 'gcr.io/<PROJECT_ID>/disciplines:latest' para que Kubernetes en GKE pueda acceder a la imagen.
-          imagePullPolicy: IfNotPresent
+          image: disciplines:latest # Remplazar a 'gcr.io/<PROJECT-ID>/disciplines:latest' para que Kubernetes en GKE pueda acceder a la imagen.
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080

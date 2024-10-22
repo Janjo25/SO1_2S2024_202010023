@@ -25,12 +25,12 @@ func assignStudent(request FacultyRequest, serverAddress string) {
 
 	client, err := grpc.NewClient(serverAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Fatalf("Ocurrió un error al crear el cliente: %v", err)
+		log.Printf("Ocurrió un error al crear el cliente: %v", err)
 	}
 	defer func(client *grpc.ClientConn) {
 		err = client.Close()
 		if err != nil {
-			log.Fatalf("Ocurrió un error al cerrar la conexión: %v", err)
+			log.Printf("Ocurrió un error al cerrar la conexión: %v", err)
 		}
 	}(client)
 
@@ -55,7 +55,7 @@ func assignStudent(request FacultyRequest, serverAddress string) {
 	}
 }
 
-func handleRequest(writer http.ResponseWriter, request *http.Request) {
+func requestHandler(writer http.ResponseWriter, request *http.Request) {
 	if request.Method != http.MethodPost {
 		http.Error(writer, "Solo se permiten peticiones POST", http.StatusMethodNotAllowed)
 
@@ -63,6 +63,7 @@ func handleRequest(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	var facultyRequest FacultyRequest
+	serverAddress := "disciplines-service:80"
 
 	err := json.NewDecoder(request.Body).Decode(&facultyRequest)
 	if err != nil {
@@ -71,7 +72,7 @@ func handleRequest(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	assignStudent(facultyRequest, "disciplines-service:80")
+	assignStudent(facultyRequest, serverAddress)
 
 	writer.WriteHeader(http.StatusOK)
 	_, err = writer.Write([]byte(fmt.Sprintf("Estudiante '%s' asignado a la disciplina '%d'", facultyRequest.Name, facultyRequest.Discipline)))
@@ -82,8 +83,25 @@ func handleRequest(writer http.ResponseWriter, request *http.Request) {
 	}
 }
 
+func healthCheckHandler(writer http.ResponseWriter, request *http.Request) {
+	if request.Method == http.MethodGet {
+		writer.WriteHeader(http.StatusOK)
+
+		_, err := fmt.Fprint(writer, "OK")
+		if err != nil {
+			log.Printf("Ocurrió un error al escribir la respuesta: %v", err)
+		}
+
+		return
+	}
+
+	writer.WriteHeader(http.StatusMethodNotAllowed)
+}
+
 func main() {
-	http.HandleFunc("/", handleRequest)
+	http.HandleFunc("/agronomy", requestHandler)
+	http.HandleFunc("/agronomy/healthz", healthCheckHandler)
+
 	log.Println("Servidor de Agronomía escuchando en el puerto 8080...")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
