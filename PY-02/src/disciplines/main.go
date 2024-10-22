@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/IBM/sarama"
 	pb "github.com/janjo25/proto"
 	"google.golang.org/grpc"
 	"log"
@@ -35,16 +36,62 @@ func coinToss() bool {
 	return random.Intn(2) == 1
 }
 
-func (server *athleticsServer) Assign(ctx context.Context, request *pb.DisciplineRequest) (*pb.DisciplineResponse, error) {
+func createKafkaProducer(brokers []string) (sarama.SyncProducer, error) {
+	config := sarama.NewConfig()
+
+	config.Producer.RequiredAcks = sarama.WaitForAll // Espera a que todos los brokers confirmen.
+	config.Producer.Retry.Max = 5                    // Número máximo de reintentos en caso de error.
+	config.Producer.Return.Successes = true          // Habilita el retorno de mensajes exitosos.
+
+	producer, err := sarama.NewSyncProducer(brokers, config)
+	if err != nil {
+		return nil, fmt.Errorf("no se pudo crear el productor de Kafka: %v", err)
+	}
+
+	return producer, nil
+}
+
+func (server *athleticsServer) Assign(_ context.Context, request *pb.DisciplineRequest) (*pb.DisciplineResponse, error) {
 	fmt.Printf("Estudiante con nombre '%s' compitiendo en la disciplina '%d'...\n", request.Name, request.Discipline)
 
 	won := coinToss()
 
 	log.Printf("¿Estudiante con nombre '%s' ganó la competencia en la disciplina '%d'? %v\n", request.Name, request.Discipline, won)
 
-	return &pb.DisciplineResponse{
-		Success: true,
-	}, nil
+	// Crea un mensaje con el resultado de la competencia para enviar a Kafka.
+	message := fmt.Sprintf("Nombre: %s, Edad: %d, Facultad: %s, Disciplina: %d, Ganó: %v", request.Name, request.Age, request.Faculty, request.Discipline, won)
+
+	// Crea un productor de Kafka. Un productor es lo que se utiliza para enviar mensajes a un topic de Kafka.
+	producer, err := createKafkaProducer([]string{"kafka-cluster:9092"})
+	if err != nil {
+		log.Printf("Ocurrió un error al crear el productor de Kafka: %v", err)
+
+		return nil, err
+	}
+
+	defer func(producer sarama.SyncProducer) {
+		err = producer.Close()
+		if err != nil {
+			log.Printf("Ocurrió un error al cerrar el productor de Kafka: %v", err)
+		}
+	}(producer)
+
+	// Publica el mensaje en el topic 'olympics-results' de Kafka.
+	kafkaMessage := &sarama.ProducerMessage{
+		Topic: "olympics-results",
+		Value: sarama.StringEncoder(message),
+	}
+
+	_, _, err = producer.SendMessage(kafkaMessage)
+	if err != nil {
+		log.Printf("Ocurrió un error al enviar mensaje a Kafka: %v", err)
+
+		return nil, err
+	} else {
+		log.Printf("Mensaje enviado a Kafka: %s", message)
+	}
+
+	return &pb.DisciplineResponse{Success: true}, nil
 }
 
 func main() {
