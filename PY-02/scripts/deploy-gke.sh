@@ -6,18 +6,18 @@ gcloud auth configure-docker
 
 # Construir y subir la imagen para Agronomía.
 echo "Construyendo y subiendo la imagen para Agronomía..."
-docker build --no-cache -t gcr.io/kubernetes-cluster-437402/agronomy:latest -f ../src/agronomy/Dockerfile ..
-docker push gcr.io/kubernetes-cluster-437402/agronomy:latest
+docker build --no-cache -t gcr.io/<PROJECT-ID>/agronomy:latest -f ../src/agronomy/Dockerfile ..
+docker push gcr.io/<PROJECT-ID>/agronomy:latest
 
 # Construir y subir la imagen para Ingeniería.
 echo "Construyendo y subiendo la imagen para Ingeniería..."
-docker build --no-cache -t gcr.io/kubernetes-cluster-437402/engineering:latest -f ../src/engineering/Dockerfile ..
-docker push gcr.io/kubernetes-cluster-437402/engineering:latest
+docker build --no-cache -t gcr.io/<PROJECT-ID>/engineering:latest -f ../src/engineering/Dockerfile ..
+docker push gcr.io/<PROJECT-ID>/engineering:latest
 
 # Construir y subir la imagen para las disciplinas.
 echo "Construyendo y subiendo la imagen para las disciplinas..."
-docker build --no-cache -t gcr.io/kubernetes-cluster-437402/disciplines:latest -f ../src/disciplines/Dockerfile ..
-docker push gcr.io/kubernetes-cluster-437402/disciplines:latest
+docker build --no-cache -t gcr.io/<PROJECT-ID>/disciplines:latest -f ../src/disciplines/Dockerfile ..
+docker push gcr.io/<PROJECT-ID>/disciplines:latest
 
 # Borrar los deployments actuales.
 echo "Borrando deployments actuales..."
