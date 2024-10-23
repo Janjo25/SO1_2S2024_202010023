@@ -35,6 +35,14 @@ kubectl delete ingress faculties-ingress
 echo "Borrando los HPA actuales..."
 kubectl delete hpa agronomy-faculty-hpa engineering-faculty-hpa
 
+# Borrar el clúster de Kafka actual.
+echo "Borrando el clúster de Kafka actual..."
+kubectl delete -f ../kafka/kafka-cluster.yaml -n kafka
+
+# Borrar el topic de Kafka actual.
+echo "Borrando el topic de Kafka actual..."
+kubectl delete -f ../kafka/kafka-topic.yaml -n kafka
+
 # Aplicar el deployment de Agronomía.
 echo "Aplicando el deployment para Agronomía..."
 kubectl apply -f ../deployments/agronomy-faculty-deployment.yaml
@@ -71,7 +79,15 @@ kubectl apply -f ../hpa/agronomy-faculty-hpa.yaml
 echo "Aplicando el HPA para Ingeniería..."
 kubectl apply -f ../hpa/engineering-faculty-hpa.yaml
 
-sleep 5
+# Aplicar el clúster de Kafka.
+echo "Aplicando el clúster de Kafka..."
+kubectl apply -f ../kafka/kafka-cluster.yaml -n kafka
+
+# Aplicar el topic de Kafka.
+echo "Aplicando el topic de Kafka..."
+kubectl apply -f ../kafka/kafka-topic.yaml -n kafka
+
+sleep 15
 
 # Verificar los pods.
 echo "Verificando el estado de los pods..."
@@ -86,7 +102,12 @@ echo "Verificando el estado del Ingress..."
 kubectl get ingress
 
 # Verificar los HPA.
-echo "Verificando el estado del HPA..."
+echo "Verificando el estado los HPA..."
 kubectl get hpa
+
+# Verificar el clúster de Kafka.
+echo "Verificando el estado del Kafka..."
+kubectl get pods -n kafka
+kubectl get services -n kafka
 
 echo "¡El despliegue ha finalizado!"

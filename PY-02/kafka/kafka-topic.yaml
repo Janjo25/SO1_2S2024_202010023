@@ -6,5 +6,5 @@ metadata:
     strimzi.io/cluster: kafka-cluster
   namespace: kafka
 spec:
-  partitions: 3
-  replicas: 3
+  partitions: 1
+  replicas: 1

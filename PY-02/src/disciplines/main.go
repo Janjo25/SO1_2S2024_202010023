@@ -82,7 +82,7 @@ func (server *disciplinesServer) Assign(_ context.Context, request *pb.Disciplin
 
 func main() {
 	// Crea un productor de Kafka. Un productor es lo que se utiliza para enviar mensajes a un topic de Kafka.
-	brokers := []string{"kafka-cluster:9092"}
+	brokers := []string{"kafka-cluster-kafka-bootstrap.kafka.svc.cluster.local:9092"}
 	producer, err := createKafkaProducer(brokers)
 	if err != nil {
 		log.Printf("Ocurrió un error al crear el productor de Kafka: %v", err)

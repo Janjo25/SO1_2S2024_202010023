@@ -6,18 +6,18 @@ metadata:
 spec:
   kafka:
     version: 3.8.0 # Versión de Kafka que queremos instalar.
-    replicas: 3
+    replicas: 1
     listeners:
       - name: plain
         port: 9092
         type: internal # El listener es "internal", lo que significa que solo es accesible dentro del cluster de Kubernetes.
-    config:
-      offsets.topic.replication.factor: 3 # Los offsets son marcas de posición que indican el último mensaje leído por un consumidor.
-      transaction.state.log.replication.factor: 3 # Si hay un fallo, estos logs permiten a Kafka revertir cambios.
-      transaction.state.log.min.isr: 2 # Número mínimo de réplicas sincronizadas requeridas para las transacciones.
-      log.message.format.version: "3.8"
+        tls: false # No se habilita TLS para este listener. TLS es un protocolo que encripta datos para comunicaciones seguras.
+    storage:
+      type: ephemeral
   zookeeper: # Configuración de Zookeeper, necesario para la coordinación de Kafka.
-    replicas: 3
+    replicas: 1
+    storage:
+      type: ephemeral
   entityOperator:
     topicOperator: { } # Operador para gestionar automáticamente los topics de Kafka.
     userOperator: { } # Operador para gestionar automáticamente los usuarios de Kafka.
