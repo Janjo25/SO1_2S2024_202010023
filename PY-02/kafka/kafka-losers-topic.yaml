@@ -1,7 +1,7 @@
 apiVersion: kafka.strimzi.io/v1beta2 # Versión de la API de Strimzi que usamos para manejar Kafka.
 kind: KafkaTopic
 metadata:
-  name: olympics-results
+  name: olympics-losers
   labels:
     strimzi.io/cluster: kafka-cluster
   namespace: kafka

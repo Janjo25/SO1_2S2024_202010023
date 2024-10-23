@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: losers-deployment
+  labels:
+    app: losers
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: losers
+  template:
+    metadata:
+      labels:
+        app: losers
+    spec:
+      containers:
+        - name: losers-container
+          image: losers:latest # Remplazar a 'gcr.io/<PROJECT-ID>/losers:latest' para que Kubernetes en GKE pueda acceder a la imagen.
+          imagePullPolicy: Always
+          env:
+            - name: KAFKA_BROKER
+              value: "kafka-cluster-kafka-bootstrap.kafka.svc.cluster.local:9092"
+            - name: KAFKA_TOPIC
+              value: "olympics-losers"
+          ports:
+            - containerPort: 8080

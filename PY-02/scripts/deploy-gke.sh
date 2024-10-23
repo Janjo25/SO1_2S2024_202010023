@@ -19,9 +19,19 @@ echo "Construyendo y subiendo la imagen para las disciplinas..."
 docker build --no-cache -t gcr.io/<PROJECT-ID>/disciplines:latest -f ../src/disciplines/Dockerfile ..
 docker push gcr.io/<PROJECT-ID>/disciplines:latest
 
+# Construir y subir la imagen para el consumidor de los ganadores.
+echo "Construyendo y subiendo la imagen para el consumidor de los ganadores..."
+docker build --no-cache -t gcr.io/<PROJECT-ID>/winners:latest -f ../src/winners/Dockerfile ..
+docker push gcr.io/<PROJECT-ID>/winners:latest
+
+# Construir y subir la imagen para el consumidor de los perdedores.
+echo "Construyendo y subiendo la imagen para el consumidor de los perdedores..."
+docker build --no-cache -t gcr.io/<PROJECT-ID>/losers:latest -f ../src/losers/Dockerfile ..
+docker push gcr.io/<PROJECT-ID>/losers:latest
+
 # Borrar los deployments actuales.
 echo "Borrando deployments actuales..."
-kubectl delete deployment agronomy-faculty-deployment engineering-faculty-deployment disciplines-deployment
+kubectl delete deployment agronomy-faculty-deployment engineering-faculty-deployment disciplines-deployment winners-deployment losers-deployment
 
 # Borrar los servicios actuales.
 echo "Borrando servicios actuales..."
@@ -59,7 +69,7 @@ kubectl apply -f ../deployments/engineering-faculty-deployment.yaml
 echo "Aplicando el servicio para Ingeniería..."
 kubectl apply -f ../services/engineering-faculty-service.yaml
 
-# Aplicar los deployments para las disciplinas.
+# Aplicar el deployment para las disciplinas.
 echo "Aplicando el deployment para las disciplinas..."
 kubectl apply -f ../deployments/disciplines-deployment.yaml
 
@@ -86,6 +96,14 @@ kubectl apply -f ../kafka/kafka-cluster.yaml -n kafka
 # Aplicar el topic de Kafka.
 echo "Aplicando el topic de Kafka..."
 kubectl apply -f ../kafka/kafka-topic.yaml -n kafka
+
+# Aplicar el deployment del consumidor de los ganadores.
+echo "Aplicando el deployment para el consumidor de los ganadores..."
+kubectl apply -f ../deployments/winners-deployment.yaml
+
+# Aplicar el deployment del consumidor de los perdedores.
+echo "Aplicando el deployment para el consumidor de los perdedores..."
+kubectl apply -f ../deployments/losers-deployment.yaml
 
 sleep 15
 
