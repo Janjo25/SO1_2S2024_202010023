@@ -60,11 +60,17 @@ func (server *disciplinesServer) Assign(_ context.Context, request *pb.Disciplin
 	log.Printf("¿Estudiante con nombre '%s' ganó la competencia en la disciplina '%d'? %v\n", request.Name, request.Discipline, won)
 
 	// Crea un mensaje con el resultado de la competencia para enviar a Kafka.
-	message := fmt.Sprintf("Nombre: %s, Edad: %d, Facultad: %s, Disciplina: %d, Ganó: %v", request.Name, request.Age, request.Faculty, request.Discipline, won)
+	message := fmt.Sprintf("Nombre: %s, Edad: %d, Facultad: %s, Disciplina: %d, Ganó: %v", request.Name, request.Age, request.Faculty, request.Discipline)
+
+	topic := "olympics-losers"
+
+	if won {
+		topic = "olympics-winners"
+	}
 
 	// Publica el mensaje en el topic 'olympics-results' de Kafka.
 	kafkaMessage := &sarama.ProducerMessage{
-		Topic: "olympics-results",
+		Topic: topic,
 		Value: sarama.StringEncoder(message),
 	}
 

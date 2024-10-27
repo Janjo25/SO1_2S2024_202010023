@@ -2,7 +2,10 @@ module github.com/janjo25/src/losers
 
 go 1.23
 
-require github.com/IBM/sarama v1.43.3
+require (
+	github.com/IBM/sarama v1.43.3
+	github.com/go-redis/redis v6.15.9+incompatible
+)
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
@@ -19,6 +22,8 @@ require (
 	github.com/jcmturner/gokrb5/v8 v8.4.4 // indirect
 	github.com/jcmturner/rpc/v2 v2.0.3 // indirect
 	github.com/klauspost/compress v1.17.11 // indirect
+	github.com/onsi/ginkgo v1.16.5 // indirect
+	github.com/onsi/gomega v1.34.2 // indirect
 	github.com/pierrec/lz4/v4 v4.1.21 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475 // indirect
 	golang.org/x/crypto v0.28.0 // indirect

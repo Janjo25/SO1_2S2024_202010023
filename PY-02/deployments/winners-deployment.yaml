@@ -23,5 +23,14 @@ spec:
               value: "kafka-cluster-kafka-bootstrap.kafka.svc.cluster.local:9092"
             - name: KAFKA_TOPIC
               value: "olympics-winners"
+            - name: REDIS_HOST
+              value: "redis-service"
+            - name: REDIS_PORT
+              value: "6379"
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: redis-release
+                  key: redis-password
           ports:
             - containerPort: 8080

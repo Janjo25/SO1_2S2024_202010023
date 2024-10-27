@@ -16,9 +16,17 @@ docker build --no-cache -t engineering:latest -f ../src/engineering/Dockerfile .
 echo "Construyendo la imagen para las disciplinas..."
 docker build --no-cache -t disciplines:latest -f ../src/disciplines/Dockerfile ..
 
+# Construir la imagen para el consumidor de los ganadores.
+echo "Construyendo la imagen para el consumidor de los ganadores..."
+docker build --no-cache -t winners:latest -f ../src/winners/Dockerfile ..
+
+# Construir la imagen para el consumidor de los perdedores.
+echo "Construyendo la imagen para el consumidor de los perdedores..."
+docker build --no-cache -t losers:latest -f ../src/losers/Dockerfile ..
+
 # Borrar los deployments actuales.
 echo "Borrando deployments actuales..."
-kubectl delete deployment agronomy-faculty-deployment engineering-faculty-deployment disciplines-deployment
+kubectl delete deployment agronomy-faculty-deployment engineering-faculty-deployment disciplines-deployment winners-deployment losers-deployment
 
 # Borrar los servicios actuales.
 echo "Borrando servicios actuales..."
@@ -31,6 +39,14 @@ kubectl delete ingress faculties-ingress
 # Borrar los HPA actuales.
 echo "Borrando los HPA actuales..."
 kubectl delete hpa agronomy-faculty-hpa engineering-faculty-hpa
+
+# Borrar el clúster de Kafka actual.
+echo "Borrando el clúster de Kafka actual..."
+kubectl delete -f ../kafka/kafka-cluster.yaml -n kafka
+
+# Borrar el topic de Kafka actual.
+echo "Borrando el topic de Kafka actual..."
+kubectl delete -f ../kafka/kafka-topic.yaml -n kafka
 
 # Aplicar el deployment de Agronomía.
 echo "Aplicando el deployment para Agronomía..."
@@ -48,7 +64,7 @@ kubectl apply -f ../deployments/engineering-faculty-deployment.yaml
 echo "Aplicando el servicio para Ingeniería..."
 kubectl apply -f ../services/engineering-faculty-service.yaml
 
-# Aplicar los deployments para las disciplinas.
+# Aplicar el deployment para las disciplinas.
 echo "Aplicando el deployment para las disciplinas..."
 kubectl apply -f ../deployments/disciplines-deployment.yaml
 
@@ -68,7 +84,27 @@ kubectl apply -f ../hpa/agronomy-faculty-hpa.yaml
 echo "Aplicando el HPA para Ingeniería..."
 kubectl apply -f ../hpa/engineering-faculty-hpa.yaml
 
-sleep 5
+# Aplicar el clúster de Kafka.
+echo "Aplicando el clúster de Kafka..."
+kubectl apply -f ../kafka/kafka-cluster.yaml -n kafka
+
+# Aplicar el topic de los ganadores.
+echo "Aplicando el topic de los ganadores..."
+kubectl apply -f ../kafka/kafka-winners-topic.yaml -n kafka
+
+# Aplicar el topic de los perdedores.
+echo "Aplicando el topic de los perdedores..."
+kubectl apply -f ../kafka/kafka-losers-topic.yaml -n kafka
+
+# Aplicar el deployment del consumidor de los ganadores.
+echo "Aplicando el deployment para el consumidor de los ganadores..."
+kubectl apply -f ../deployments/winners-deployment.yaml
+
+# Aplicar el deployment del consumidor de los perdedores.
+echo "Aplicando el deployment para el consumidor de los perdedores..."
+kubectl apply -f ../deployments/losers-deployment.yaml
+
+sleep 15
 
 # Verificar los pods.
 echo "Verificando el estado de los pods..."
@@ -83,7 +119,12 @@ echo "Verificando el estado del Ingress..."
 kubectl get ingress
 
 # Verificar los HPA.
-echo "Verificando el estado del HPA..."
+echo "Verificando el estado los HPA..."
 kubectl get hpa
+
+# Verificar el clúster de Kafka.
+echo "Verificando el estado del Kafka..."
+kubectl get pods -n kafka
+kubectl get services -n kafka
 
 echo "¡El despliegue ha finalizado!"

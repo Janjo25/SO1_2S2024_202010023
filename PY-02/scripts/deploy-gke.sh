@@ -93,9 +93,13 @@ kubectl apply -f ../hpa/engineering-faculty-hpa.yaml
 echo "Aplicando el clúster de Kafka..."
 kubectl apply -f ../kafka/kafka-cluster.yaml -n kafka
 
-# Aplicar el topic de Kafka.
-echo "Aplicando el topic de Kafka..."
-kubectl apply -f ../kafka/kafka-topic.yaml -n kafka
+# Aplicar el topic de los ganadores.
+echo "Aplicando el topic de los ganadores..."
+kubectl apply -f ../kafka/kafka-winners-topic.yaml -n kafka
+
+# Aplicar el topic de los perdedores.
+echo "Aplicando el topic de los perdedores..."
+kubectl apply -f ../kafka/kafka-losers-topic.yaml -n kafka
 
 # Aplicar el deployment del consumidor de los ganadores.
 echo "Aplicando el deployment para el consumidor de los ganadores..."
