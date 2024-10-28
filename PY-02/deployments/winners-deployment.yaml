@@ -17,14 +17,14 @@ spec:
       containers:
         - name: winners-container
           image: winners:latest # Remplazar a 'gcr.io/<PROJECT-ID>/winners:latest' para que Kubernetes en GKE pueda acceder a la imagen.
-          imagePullPolicy: Always
+          imagePullPolicy: Never # Reemplazar a 'Always' en GKE para garantizar que Kubernetes descargue la imagen más reciente en cada despliegue.
           env:
             - name: KAFKA_BROKER
               value: "kafka-cluster-kafka-bootstrap.kafka.svc.cluster.local:9092"
             - name: KAFKA_TOPIC
               value: "olympics-winners"
             - name: REDIS_HOST
-              value: "redis-service"
+              value: "redis-release-master"
             - name: REDIS_PORT
               value: "6379"
             - name: REDIS_PASSWORD
