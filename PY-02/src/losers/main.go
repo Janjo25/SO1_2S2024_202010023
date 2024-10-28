@@ -64,12 +64,55 @@ func main() {
 	for message := range partitionConsumer.Messages() {
 		fmt.Printf("Mensaje recibido (perdedor): %s\n", string(message.Value))
 
-		key := fmt.Sprintf("loser-%d", message.Offset)
-		value := string(message.Value)
+		var name string
+		var age int
+		var faculty string
+		var discipline int
 
-		err = redisClient.Set(key, value, 0).Err()
+		_, err = fmt.Sscanf(string(message.Value), "Nombre: %s, Edad: %d, Facultad: %s, Disciplina: %d", &name, &age, &faculty, &discipline)
+		if err != nil {
+			log.Printf("Ocurrió un error al leer el mensaje: %s", err)
+
+			continue
+		}
+
+		key := fmt.Sprintf("loser-%d", message.Offset)
+		value := map[string]interface{}{
+			"nombre":     name,
+			"edad":       age,
+			"facultad":   faculty,
+			"disciplina": discipline,
+		}
+
+		err = redisClient.HMSet(key, value).Err()
 		if err != nil {
 			log.Printf("Ocurrió un error al guardar el mensaje en Redis: %s", err)
+		}
+
+		// Contador de participantes por facultad.
+		if faculty == "engineering" {
+			err = redisClient.Incr("engineering-count").Err()
+			if err != nil {
+				log.Printf("Ocurrió un error al incrementar el contador de ingeniería: %s", err)
+			}
+		} else if faculty == "agronomy" {
+			err = redisClient.Incr("agronomy-count").Err()
+			if err != nil {
+				log.Printf("Ocurrió un error al incrementar el contador de agronomía: %s", err)
+			}
+		}
+
+		// Contador de perdedores por facultad.
+		if faculty == "engineering" {
+			err = redisClient.Incr("engineering-loser-count").Err()
+			if err != nil {
+				log.Printf("Ocurrió un error al incrementar el contador de perdedores de ingeniería: %s", err)
+			}
+		} else if faculty == "agronomy" {
+			err = redisClient.Incr("agronomy-loser-count").Err()
+			if err != nil {
+				log.Printf("Ocurrió un error al incrementar el contador de perdedores de agronomía: %s", err)
+			}
 		}
 
 		log.Printf("Mensaje guardado en Redis con clave '%s'", key)
