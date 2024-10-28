@@ -6,6 +6,8 @@ import (
 	"github.com/go-redis/redis"
 	"log"
 	"os"
+	"regexp"
+	"strconv"
 )
 
 func main() {
@@ -62,19 +64,21 @@ func main() {
 	log.Println("Consumidor escuchando mensajes de los ganadores...")
 
 	for message := range partitionConsumer.Messages() {
-		fmt.Printf("Mensaje recibido (ganador): %s\n", string(message.Value))
+		//fmt.Printf("Mensaje recibido (ganador): %s\n", string(message.Value))
 
-		var name string
-		var age int
-		var faculty string
-		var discipline int
+		regex := regexp.MustCompile(`Nombre: ([^,]+), Edad: (\d+), Facultad: ([^,]+), Disciplina: (\d+)`)
+		matches := regex.FindStringSubmatch(string(message.Value))
 
-		_, err = fmt.Sscanf(string(message.Value), "Nombre: %s, Edad: %d, Facultad: %s, Disciplina: %d", &name, &age, &faculty, &discipline)
-		if err != nil {
-			log.Printf("Ocurrió un error al leer el mensaje: %s", err)
+		if len(matches) < 5 {
+			log.Printf("Ocurrió un error al leer el mensaje: %s", string(message.Value))
 
 			continue
 		}
+
+		name := matches[1]
+		age, _ := strconv.Atoi(matches[2])
+		faculty := matches[3]
+		discipline, _ := strconv.Atoi(matches[4])
 
 		key := fmt.Sprintf("winner-%d", message.Offset)
 		value := map[string]interface{}{
@@ -90,12 +94,12 @@ func main() {
 		}
 
 		// Contador de participantes por facultad.
-		if faculty == "engineering" {
+		if faculty == "Ingeniería" {
 			err = redisClient.Incr("engineering-count").Err()
 			if err != nil {
 				log.Printf("Ocurrió un error al incrementar el contador de ingeniería: %s", err)
 			}
-		} else if faculty == "agronomy" {
+		} else if faculty == "Agronomía" {
 			err = redisClient.Incr("agronomy-count").Err()
 			if err != nil {
 				log.Printf("Ocurrió un error al incrementar el contador de agronomía: %s", err)
