@@ -23,7 +23,7 @@ func main() {
 
 	_, err := redisClient.Ping().Result()
 	if err != nil {
-		log.Printf("Ocurrió un error al conectar con Redis: %v", err)
+		log.Fatalf("Ocurrió un error al conectar con Redis: %s", err)
 	}
 
 	log.Printf("Conexión exitosa con Redis en '%s:%s'", redisHost, redisPort)
@@ -33,13 +33,13 @@ func main() {
 
 	consumer, err := sarama.NewConsumer(brokers, config)
 	if err != nil {
-		log.Printf("Ocurrió un error al crear el consumidor de Kafka: %v", err)
+		log.Fatalf("Ocurrió un error al crear el consumidor de Kafka: %s", err)
 	}
 
 	defer func(consumer sarama.Consumer) {
 		err = consumer.Close()
 		if err != nil {
-			log.Printf("Ocurrió un error al cerrar el consumidor de Kafka: %v", err)
+			log.Printf("Ocurrió un error al cerrar el consumidor de Kafka: %s", err)
 		}
 	}(consumer)
 
@@ -49,27 +49,27 @@ func main() {
 	*/
 	partitionConsumer, err := consumer.ConsumePartition(topic, 0, sarama.OffsetNewest)
 	if err != nil {
-		log.Printf("Ocurrió un error al consumir del topic '%s': %v", topic, err)
+		log.Printf("Ocurrió un error al consumir del topic '%s': %s", topic, err)
 	}
 
 	defer func(partitionConsumer sarama.PartitionConsumer) {
 		err = partitionConsumer.Close()
 		if err != nil {
-			log.Printf("Ocurrió un error al cerrar el consumidor de partición: %v", err)
+			log.Printf("Ocurrió un error al cerrar el consumidor de partición: %s", err)
 		}
 	}(partitionConsumer)
 
 	log.Println("Consumidor escuchando mensajes de los perdedores...")
 
 	for message := range partitionConsumer.Messages() {
-		fmt.Printf("Mensaje recibido (ganador): %s\n", string(message.Value))
+		fmt.Printf("Mensaje recibido (perdedor): %s\n", string(message.Value))
 
 		key := fmt.Sprintf("loser-%d", message.Offset)
 		value := string(message.Value)
 
 		err = redisClient.Set(key, value, 0).Err()
 		if err != nil {
-			log.Printf("Ocurrió un error al guardar el mensaje en Redis: %v", err)
+			log.Printf("Ocurrió un error al guardar el mensaje en Redis: %s", err)
 		}
 
 		log.Printf("Mensaje guardado en Redis con clave '%s'", key)

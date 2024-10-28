@@ -46,7 +46,7 @@ func createKafkaProducer(brokers []string) (sarama.SyncProducer, error) {
 
 	producer, err := sarama.NewSyncProducer(brokers, config)
 	if err != nil {
-		return nil, fmt.Errorf("no se pudo crear el productor de Kafka: %v", err)
+		return nil, fmt.Errorf("no se pudo crear el productor de Kafka: %s", err)
 	}
 
 	return producer, nil
@@ -60,7 +60,7 @@ func (server *disciplinesServer) Assign(_ context.Context, request *pb.Disciplin
 	log.Printf("¿Estudiante con nombre '%s' ganó la competencia en la disciplina '%d'? %v\n", request.Name, request.Discipline, won)
 
 	// Crea un mensaje con el resultado de la competencia para enviar a Kafka.
-	message := fmt.Sprintf("Nombre: %s, Edad: %d, Facultad: %s, Disciplina: %d, Ganó: %v", request.Name, request.Age, request.Faculty, request.Discipline)
+	message := fmt.Sprintf("Nombre: %s, Edad: %d, Facultad: %s, Disciplina: %d", request.Name, request.Age, request.Faculty, request.Discipline)
 
 	topic := "olympics-losers"
 
@@ -76,7 +76,7 @@ func (server *disciplinesServer) Assign(_ context.Context, request *pb.Disciplin
 
 	_, _, err := server.kafkaProducer.SendMessage(kafkaMessage)
 	if err != nil {
-		log.Printf("Ocurrió un error al enviar mensaje a Kafka: %v", err)
+		log.Printf("Ocurrió un error al enviar mensaje a Kafka: %s", err)
 
 		return nil, err
 	} else {
@@ -91,13 +91,13 @@ func main() {
 	brokers := []string{"kafka-cluster-kafka-bootstrap.kafka.svc.cluster.local:9092"}
 	producer, err := createKafkaProducer(brokers)
 	if err != nil {
-		log.Printf("Ocurrió un error al crear el productor de Kafka: %v", err)
+		log.Fatalf("Ocurrió un error al crear el productor de Kafka: %s", err)
 	}
 
 	defer func(producer sarama.SyncProducer) {
 		err = producer.Close()
 		if err != nil {
-			log.Printf("Ocurrió un error al cerrar el productor de Kafka: %v", err)
+			log.Printf("Ocurrió un error al cerrar el productor de Kafka: %s", err)
 		}
 	}(producer)
 
@@ -107,7 +107,7 @@ func main() {
 
 	listener, err := net.Listen("tcp", ":8080")
 	if err != nil {
-		log.Fatalf("No se pudo establecer la conexión en el puerto 8080: %v", err)
+		log.Fatalf("No se pudo establecer la conexión en el puerto 8080: %s", err)
 	}
 
 	/*
@@ -122,6 +122,6 @@ func main() {
 
 	err = grpcServer.Serve(listener)
 	if err != nil {
-		log.Fatalf("Ocurrió un error al servir el servidor: %v", err)
+		log.Fatalf("Ocurrió un error al servir el servidor gRPC: %s", err)
 	}
 }
