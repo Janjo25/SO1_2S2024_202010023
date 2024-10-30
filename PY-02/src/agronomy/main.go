@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	pb "github.com/janjo25/proto"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"log"
@@ -19,7 +21,28 @@ type FacultyRequest struct {
 	Discipline int    `json:"discipline"`
 }
 
+// Definir el contador y el histograma de las métricas.
+var (
+	httpRequestsTotal = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "http_requests_total",
+			Help: "Número total de peticiones HTTP",
+		}, []string{"method", "endpoint"},
+	)
+	httpRequestDuration = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    "http_request_duration_seconds",
+			Help:    "Duración de las peticiones HTTP en segundos",
+			Buckets: prometheus.DefBuckets,
+		}, []string{"method", "endpoint"},
+	)
+)
+
 func assignStudent(request FacultyRequest, serverAddress string) {
+	// Iniciar el temporizador para medir la latencia.
+	start := time.Now()
+	httpRequestsTotal.WithLabelValues("POST", "/agronomy").Inc()
+
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -53,6 +76,9 @@ func assignStudent(request FacultyRequest, serverAddress string) {
 	} else {
 		log.Printf("No se ha podido asignar al estudiante '%s' a la disciplina '%d'", request.Name, request.Discipline)
 	}
+
+	// Registrar la duración de la petición.
+	httpRequestDuration.WithLabelValues("POST", "/agronomy").Observe(time.Since(start).Seconds())
 }
 
 func requestHandler(writer http.ResponseWriter, request *http.Request) {
@@ -102,6 +128,13 @@ func main() {
 	http.HandleFunc("/agronomy", requestHandler)
 	http.HandleFunc("/agronomy/healthz", healthCheckHandler)
 
+	http.Handle("/metrics", promhttp.Handler())
+
 	log.Println("Servidor de Agronomía escuchando en el puerto 8080...")
 	log.Fatal(http.ListenAndServe(":8080", nil))
+}
+
+func init() {
+	prometheus.MustRegister(httpRequestsTotal)
+	prometheus.MustRegister(httpRequestDuration)
 }
