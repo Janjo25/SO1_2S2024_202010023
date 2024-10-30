@@ -94,12 +94,12 @@ func main() {
 		}
 
 		// Contador de participantes por facultad.
-		if faculty == "engineering" {
+		if faculty == "Ingeniería" {
 			err = redisClient.Incr("engineering-count").Err()
 			if err != nil {
 				log.Printf("Ocurrió un error al incrementar el contador de ingeniería: %s", err)
 			}
-		} else if faculty == "agronomy" {
+		} else if faculty == "Agronomía" {
 			err = redisClient.Incr("agronomy-count").Err()
 			if err != nil {
 				log.Printf("Ocurrió un error al incrementar el contador de agronomía: %s", err)
