@@ -14,6 +14,16 @@ import (
 	"time"
 )
 
+type PrometheusMetrics struct {
+	HttpRequestsTotal   *prometheus.CounterVec
+	HttpRequestDuration *prometheus.HistogramVec
+}
+
+type grpcClient struct {
+	Connection *grpc.ClientConn
+	Client     pb.DisciplineServiceClient
+}
+
 type FacultyRequest struct {
 	Name       string `json:"name"`
 	Age        int    `json:"age"`
@@ -21,43 +31,47 @@ type FacultyRequest struct {
 	Discipline int    `json:"discipline"`
 }
 
-// Definir el contador y el histograma de las métricas.
-var (
-	httpRequestsTotal = prometheus.NewCounterVec(
-		prometheus.CounterOpts{
-			Name: "http_requests_total",
-			Help: "Número total de peticiones HTTP",
-		}, []string{"method", "endpoint"},
-	)
-	httpRequestDuration = prometheus.NewHistogramVec(
-		prometheus.HistogramOpts{
-			Name:    "http_request_duration_seconds",
-			Help:    "Duración de las peticiones HTTP en segundos",
-			Buckets: prometheus.DefBuckets,
-		}, []string{"method", "endpoint"},
-	)
-)
+func initializeMetrics() *PrometheusMetrics {
+	metrics := &PrometheusMetrics{
+		HttpRequestsTotal: prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "http_requests_total",
+				Help: "Número total de peticiones HTTP",
+			}, []string{"method", "endpoint"},
+		),
+		HttpRequestDuration: prometheus.NewHistogramVec(
+			prometheus.HistogramOpts{
+				Name:    "http_request_duration_seconds",
+				Help:    "Duración de las peticiones HTTP en segundos",
+				Buckets: prometheus.DefBuckets,
+			}, []string{"method", "endpoint"},
+		),
+	}
 
-func assignStudent(request FacultyRequest, serverAddress string) {
+	prometheus.MustRegister(metrics.HttpRequestsTotal)
+	prometheus.MustRegister(metrics.HttpRequestDuration)
+
+	return metrics
+}
+
+func newClient(serverAddress string) (*grpcClient, error) {
+	connection, err := grpc.NewClient(serverAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return nil, fmt.Errorf("ocurrió un error al crear el cliente: %v", err)
+	}
+
+	client := pb.NewDisciplineServiceClient(connection)
+
+	return &grpcClient{Connection: connection, Client: client}, nil
+}
+
+func assignStudent(metrics *PrometheusMetrics, client *grpcClient, request FacultyRequest) {
 	// Iniciar el temporizador para medir la latencia.
 	start := time.Now()
-	httpRequestsTotal.WithLabelValues("POST", "/agronomy").Inc()
+	metrics.HttpRequestsTotal.WithLabelValues("POST", "/agronomy").Inc()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-
-	client, err := grpc.NewClient(serverAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		log.Printf("Ocurrió un error al crear el cliente: %v", err)
-	}
-	defer func(client *grpc.ClientConn) {
-		err = client.Close()
-		if err != nil {
-			log.Printf("Ocurrió un error al cerrar la conexión: %v", err)
-		}
-	}(client)
-
-	disciplineClient := pb.NewDisciplineServiceClient(client)
 
 	grpcRequest := &pb.DisciplineRequest{
 		Name:       request.Name,
@@ -66,22 +80,24 @@ func assignStudent(request FacultyRequest, serverAddress string) {
 		Discipline: int32(request.Discipline),
 	}
 
-	response, err := disciplineClient.Assign(ctx, grpcRequest)
+	grpcResponse, err := client.Client.Assign(ctx, grpcRequest)
 	if err != nil {
 		log.Printf("Ocurrió un error al llamar al servicio: %v", err)
+
+		return
 	}
 
-	if response.Success {
+	if grpcResponse.Success {
 		log.Printf("El estudiante '%s' ha sido asignado a la disciplina '%d'", request.Name, request.Discipline)
 	} else {
 		log.Printf("No se ha podido asignar al estudiante '%s' a la disciplina '%d'", request.Name, request.Discipline)
 	}
 
 	// Registrar la duración de la petición.
-	httpRequestDuration.WithLabelValues("POST", "/agronomy").Observe(time.Since(start).Seconds())
+	metrics.HttpRequestDuration.WithLabelValues("POST", "/agronomy").Observe(time.Since(start).Seconds())
 }
 
-func requestHandler(writer http.ResponseWriter, request *http.Request) {
+func requestHandler(writer http.ResponseWriter, request *http.Request, metrics *PrometheusMetrics, client *grpcClient) {
 	if request.Method != http.MethodPost {
 		http.Error(writer, "Solo se permiten peticiones POST", http.StatusMethodNotAllowed)
 
@@ -89,7 +105,6 @@ func requestHandler(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	var facultyRequest FacultyRequest
-	serverAddress := "disciplines-service:80"
 
 	err := json.NewDecoder(request.Body).Decode(&facultyRequest)
 	if err != nil {
@@ -98,14 +113,12 @@ func requestHandler(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	assignStudent(facultyRequest, serverAddress)
+	assignStudent(metrics, client, facultyRequest)
 
 	writer.WriteHeader(http.StatusOK)
 	_, err = writer.Write([]byte(fmt.Sprintf("Estudiante '%s' asignado a la disciplina '%d'", facultyRequest.Name, facultyRequest.Discipline)))
 	if err != nil {
 		log.Printf("Ocurrió un error al escribir la respuesta: %v", err)
-
-		return
 	}
 }
 
@@ -125,16 +138,27 @@ func healthCheckHandler(writer http.ResponseWriter, request *http.Request) {
 }
 
 func main() {
-	http.HandleFunc("/agronomy", requestHandler)
+	metrics := initializeMetrics()
+
+	serverAddress := "discipline-service:8080"
+	client, err := newClient(serverAddress)
+	if err != nil {
+		log.Fatalf("Ocurrió un error al crear el cliente: %v", err)
+	}
+	defer func(Connection *grpc.ClientConn) {
+		err = Connection.Close()
+		if err != nil {
+			log.Printf("Ocurrió un error al cerrar la conexión: %v", err)
+		}
+	}(client.Connection)
+
+	http.HandleFunc("/agronomy", func(writer http.ResponseWriter, request *http.Request) {
+		requestHandler(writer, request, metrics, client)
+	})
 	http.HandleFunc("/agronomy/healthz", healthCheckHandler)
 
 	http.Handle("/metrics", promhttp.Handler())
 
 	log.Println("Servidor de Agronomía escuchando en el puerto 8080...")
 	log.Fatal(http.ListenAndServe(":8080", nil))
-}
-
-func init() {
-	prometheus.MustRegister(httpRequestsTotal)
-	prometheus.MustRegister(httpRequestDuration)
 }
