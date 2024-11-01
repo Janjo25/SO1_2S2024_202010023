@@ -1,0 +1,398 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_REDIS-DATASOURCE",
+      "label": "redis-datasource",
+      "description": "",
+      "type": "datasource",
+      "pluginId": "redis-datasource",
+      "pluginName": "Redis"
+    }
+  ],
+  "__elements": {},
+  "__requires": [
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "11.3.0-pre"
+    },
+    {
+      "type": "datasource",
+      "id": "redis-datasource",
+      "name": "Redis",
+      "version": "2.2.0"
+    },
+    {
+      "type": "panel",
+      "id": "stat",
+      "name": "Stat",
+      "version": ""
+    }
+  ],
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "redis-datasource",
+        "uid": "${DS_REDIS-DATASOURCE}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "agronomy-count"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Agronomía"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "engineering-count"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Ingeniería"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.3.0-pre",
+      "targets": [
+        {
+          "command": "get",
+          "datasource": {
+            "type": "redis-datasource",
+            "uid": "${DS_REDIS-DATASOURCE}"
+          },
+          "keyName": "agronomy-count",
+          "query": "",
+          "refId": "A",
+          "type": "command"
+        },
+        {
+          "command": "get",
+          "datasource": {
+            "type": "redis-datasource",
+            "uid": "${DS_REDIS-DATASOURCE}"
+          },
+          "hide": false,
+          "keyName": "engineering-count",
+          "query": "",
+          "refId": "B",
+          "type": "command"
+        }
+      ],
+      "title": "Participantes por Facultad",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "redis-datasource",
+        "uid": "${DS_REDIS-DATASOURCE}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "agronomy-loser-count"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Agronomía"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "engineering-loser-count"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Ingeniería"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "id": 3,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.3.0-pre",
+      "targets": [
+        {
+          "command": "get",
+          "datasource": {
+            "type": "redis-datasource",
+            "uid": "${DS_REDIS-DATASOURCE}"
+          },
+          "keyName": "agronomy-loser-count",
+          "query": "",
+          "refId": "A",
+          "type": "command"
+        },
+        {
+          "command": "get",
+          "datasource": {
+            "type": "redis-datasource",
+            "uid": "${DS_REDIS-DATASOURCE}"
+          },
+          "hide": false,
+          "keyName": "engineering-loser-count",
+          "query": "",
+          "refId": "B",
+          "type": "command"
+        }
+      ],
+      "title": "Perdedores por Facultad",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "redis-datasource",
+        "uid": "${DS_REDIS-DATASOURCE}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "discipline-1-count"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Atletismo"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "discipline-2-count"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Boxeo"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "discipline-3-count"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Natación"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 6,
+        "y": 8
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.3.0-pre",
+      "targets": [
+        {
+          "command": "get",
+          "datasource": {
+            "type": "redis-datasource",
+            "uid": "${DS_REDIS-DATASOURCE}"
+          },
+          "keyName": "discipline-1-count",
+          "query": "",
+          "refId": "A",
+          "type": "command"
+        },
+        {
+          "command": "get",
+          "datasource": {
+            "type": "redis-datasource",
+            "uid": "${DS_REDIS-DATASOURCE}"
+          },
+          "hide": false,
+          "keyName": "discipline-2-count",
+          "query": "",
+          "refId": "B",
+          "type": "command"
+        },
+        {
+          "command": "get",
+          "datasource": {
+            "type": "redis-datasource",
+            "uid": "${DS_REDIS-DATASOURCE}"
+          },
+          "hide": false,
+          "keyName": "discipline-3-count",
+          "query": "",
+          "refId": "C",
+          "type": "command"
+        }
+      ],
+      "title": "Ganadores por Disciplina",
+      "type": "stat"
+    }
+  ],
+  "schemaVersion": 40,
+  "tags": [],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Olympics",
+  "uid": "fe29cqlt90t1cb",
+  "version": 4,
+  "weekStart": ""
+}
