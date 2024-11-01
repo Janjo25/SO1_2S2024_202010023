@@ -41,10 +41,6 @@ kubectl delete service agronomy-faculty-service engineering-faculty-service disc
 echo "Borrando el Ingress actual..."
 kubectl delete ingress faculties-ingress
 
-# Borrar los HPA actuales.
-echo "Borrando los HPA actuales..."
-kubectl delete hpa agronomy-faculty-hpa engineering-faculty-hpa
-
 # Borrar el clúster de Kafka actual.
 echo "Borrando el clúster de Kafka actual..."
 kubectl delete -f ../kafka/kafka-cluster.yaml -n kafka
@@ -81,14 +77,6 @@ kubectl apply -f ../services/disciplines-service.yaml
 echo "Aplicando el Ingress para las facultades..."
 kubectl apply -f ../ingresses/faculties-ingress.yaml
 
-# Aplicar el HPA de Agronomía.
-echo "Aplicando el HPA para Agronomía..."
-kubectl apply -f ../hpa/agronomy-faculty-hpa.yaml
-
-# Aplicar el HPA de Ingeniería.
-echo "Aplicando el HPA para Ingeniería..."
-kubectl apply -f ../hpa/engineering-faculty-hpa.yaml
-
 # Aplicar el clúster de Kafka.
 echo "Aplicando el clúster de Kafka..."
 kubectl apply -f ../kafka/kafka-cluster.yaml -n kafka
@@ -122,10 +110,6 @@ kubectl get services
 # Verificar el Ingress.
 echo "Verificando el estado del Ingress..."
 kubectl get ingress
-
-# Verificar los HPA.
-echo "Verificando el estado los HPA..."
-kubectl get hpa
 
 # Verificar el clúster de Kafka.
 echo "Verificando el estado del Kafka..."
