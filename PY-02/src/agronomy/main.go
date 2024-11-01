@@ -65,11 +65,7 @@ func newClient(serverAddress string) (*grpcClient, error) {
 	return &grpcClient{Connection: connection, Client: client}, nil
 }
 
-func assignStudent(metrics *PrometheusMetrics, client *grpcClient, request FacultyRequest) {
-	// Iniciar el temporizador para medir la latencia.
-	start := time.Now()
-	metrics.HttpRequestsTotal.WithLabelValues("POST", "/agronomy").Inc()
-
+func assignStudent(client *grpcClient, request FacultyRequest) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -92,9 +88,6 @@ func assignStudent(metrics *PrometheusMetrics, client *grpcClient, request Facul
 	} else {
 		log.Printf("No se ha podido asignar al estudiante '%s' a la disciplina '%d'", request.Name, request.Discipline)
 	}
-
-	// Registrar la duración de la petición.
-	metrics.HttpRequestDuration.WithLabelValues("POST", "/agronomy").Observe(time.Since(start).Seconds())
 }
 
 func requestHandler(writer http.ResponseWriter, request *http.Request, metrics *PrometheusMetrics, client *grpcClient) {
@@ -103,6 +96,10 @@ func requestHandler(writer http.ResponseWriter, request *http.Request, metrics *
 
 		return
 	}
+
+	// Iniciar el temporizador para medir la latencia.
+	start := time.Now()
+	metrics.HttpRequestsTotal.WithLabelValues("POST", "/agronomy").Inc()
 
 	var facultyRequest FacultyRequest
 
@@ -113,13 +110,16 @@ func requestHandler(writer http.ResponseWriter, request *http.Request, metrics *
 		return
 	}
 
-	assignStudent(metrics, client, facultyRequest)
+	assignStudent(client, facultyRequest)
 
 	writer.WriteHeader(http.StatusOK)
 	_, err = writer.Write([]byte(fmt.Sprintf("Estudiante '%s' asignado a la disciplina '%d'", facultyRequest.Name, facultyRequest.Discipline)))
 	if err != nil {
 		log.Printf("Ocurrió un error al escribir la respuesta: %v", err)
 	}
+
+	// Registrar la duración de la petición.
+	metrics.HttpRequestDuration.WithLabelValues("POST", "/agronomy").Observe(time.Since(start).Seconds())
 }
 
 func healthCheckHandler(writer http.ResponseWriter, request *http.Request) {
