@@ -18,7 +18,7 @@ de trabajo, y el escalado automático de las aplicaciones según la demanda.
 Ejecutamos el siguiente comando para crear el cluster:
 
 ```bash
-gcloud container clusters create olympics-us-central1-a --disk-size=25GB --disk-type=pd-standard --num-nodes=5 --location=us-central1
+gcloud container clusters create olympics-us-central1-a --disk-size=25GB --disk-type=pd-standard --num-nodes=5 --zone=us-central1-a
 ```
 
 Luego, obtenemos las credenciales para poder interactuar con el cluster:
